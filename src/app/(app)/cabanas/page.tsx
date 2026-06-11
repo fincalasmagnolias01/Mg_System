@@ -213,7 +213,7 @@ export default function CabanasPage() {
           ) : (
             <div className="p-5 flex flex-col gap-4">
               {/* Cabin image — read only, edit from config */}
-              <div className="relative w-full h-44 rounded-2xl overflow-hidden bg-slate-100 flex-shrink-0">
+              <div className="relative w-full h-28 rounded-2xl overflow-hidden bg-slate-100 flex-shrink-0">
                 {selected.imagen_url ? (
                   <Image src={selected.imagen_url} alt={selected.nombre} fill className="object-cover" />
                 ) : (
