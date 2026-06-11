@@ -1,14 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
+import { uploadImage } from '@/lib/storage'
 import { Categoria, Producto } from '@/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
-import { Plus, Save, Trash2, PackageSearch, Pencil, X } from 'lucide-react'
+import { Plus, Save, Trash2, PackageSearch, X, Camera, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
 
 interface ProductoAdminModalProps {
   open: boolean
@@ -19,10 +21,12 @@ export default function ProductoAdminModal({ open, onClose }: ProductoAdminModal
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [catSelected, setCatSelected] = useState<string | null>(null)
   const [productos, setProductos] = useState<Producto[]>([])
-  const [editando, setEditando] = useState<Record<string, { precio: string; stock: string }>>({})
+  const [editando, setEditando] = useState<Record<string, { precio: string; stock: string; imagen_url?: string }>>({})
   const [nuevo, setNuevo] = useState({ nombre: '', precio: '', stock: '' })
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving] = useState<string | boolean>(false)
+  const [uploading, setUploading] = useState<string | null>(null)
   const [showNuevo, setShowNuevo] = useState(false)
+  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   useEffect(() => {
     if (!open) return
@@ -43,8 +47,10 @@ export default function ProductoAdminModal({ open, onClose }: ProductoAdminModal
       .then(({ data }) => {
         if (data) {
           setProductos(data)
-          const map: Record<string, { precio: string; stock: string }> = {}
-          data.forEach(p => { map[p.id] = { precio: String(p.precio), stock: String((p as any).stock ?? '') } })
+          const map: Record<string, { precio: string; stock: string; imagen_url?: string }> = {}
+          data.forEach(p => {
+            map[p.id] = { precio: String(p.precio), stock: String((p as any).stock ?? ''), imagen_url: p.imagen_url }
+          })
           setEditando(map)
         }
       })
@@ -56,14 +62,26 @@ export default function ProductoAdminModal({ open, onClose }: ProductoAdminModal
     const precio = parseFloat(vals.precio)
     const stock = vals.stock !== '' ? parseInt(vals.stock) : null
     if (isNaN(precio)) { toast.error('Precio inválido'); return }
-    setSaving(true)
+    setSaving(p.id)
     await createClient().from('productos').update({ precio, ...(stock !== null ? { stock } : {}) }).eq('id', p.id)
     toast.success(`${p.nombre} actualizado`)
     setSaving(false)
   }
 
+  async function handlePhotoUpload(p: Producto, file: File) {
+    setUploading(p.id)
+    try {
+      const url = await uploadImage('productos', file, `prod-${p.id}`)
+      await createClient().from('productos').update({ imagen_url: url }).eq('id', p.id)
+      setEditando(prev => ({ ...prev, [p.id]: { ...prev[p.id], imagen_url: url } }))
+      setProductos(prev => prev.map(x => x.id === p.id ? { ...x, imagen_url: url } : x))
+      toast.success('Foto actualizada')
+    } catch { toast.error('Error al subir foto') }
+    finally { setUploading(null) }
+  }
+
   async function handleEliminar(p: Producto) {
-    if (!confirm(`¿Eliminar "${p.nombre}"?`)) return
+    if (!confirm(`¿Desactivar "${p.nombre}"?`)) return
     await createClient().from('productos').update({ disponible: false }).eq('id', p.id)
     setProductos(prev => prev.filter(x => x.id !== p.id))
     toast.success('Producto desactivado')
@@ -86,7 +104,7 @@ export default function ProductoAdminModal({ open, onClose }: ProductoAdminModal
     }).select().single()
     if (error || !data) { toast.error('Error al agregar'); setSaving(false); return }
     setProductos(prev => [...prev, data])
-    setEditando(prev => ({ ...prev, [data.id]: { precio: String(data.precio), stock: String((data as any).stock ?? '') } }))
+    setEditando(prev => ({ ...prev, [data.id]: { precio: String(data.precio), stock: '', imagen_url: undefined } }))
     setNuevo({ nombre: '', precio: '', stock: '' })
     setShowNuevo(false)
     toast.success(`${data.nombre} agregado`)
@@ -123,7 +141,7 @@ export default function ProductoAdminModal({ open, onClose }: ProductoAdminModal
           {/* Products list */}
           <div className="flex-1 overflow-y-auto">
             <div className="p-4 space-y-2">
-              {/* Add new product */}
+              {/* Add new */}
               {showNuevo ? (
                 <div className="border-2 border-dashed border-slate-300 rounded-xl p-3 space-y-2 bg-slate-50">
                   <p className="text-xs font-bold text-slate-500 uppercase">Nuevo producto</p>
@@ -136,27 +154,19 @@ export default function ProductoAdminModal({ open, onClose }: ProductoAdminModal
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-xs text-slate-400">Precio (Q)</label>
-                      <Input
-                        type="number" step="0.01" min="0"
-                        placeholder="0.00"
-                        value={nuevo.precio}
-                        onChange={e => setNuevo(p => ({ ...p, precio: e.target.value }))}
-                        className="h-9 rounded-lg"
-                      />
+                      <Input type="number" step="0.01" min="0" placeholder="0.00"
+                        value={nuevo.precio} onChange={e => setNuevo(p => ({ ...p, precio: e.target.value }))}
+                        className="h-9 rounded-lg" />
                     </div>
                     <div>
                       <label className="text-xs text-slate-400">Stock (opcional)</label>
-                      <Input
-                        type="number" min="0"
-                        placeholder="—"
-                        value={nuevo.stock}
-                        onChange={e => setNuevo(p => ({ ...p, stock: e.target.value }))}
-                        className="h-9 rounded-lg"
-                      />
+                      <Input type="number" min="0" placeholder="—"
+                        value={nuevo.stock} onChange={e => setNuevo(p => ({ ...p, stock: e.target.value }))}
+                        className="h-9 rounded-lg" />
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={handleAgregar} disabled={saving} className="bg-slate-800 hover:bg-slate-700 rounded-lg">
+                    <Button size="sm" onClick={handleAgregar} disabled={!!saving} className="bg-slate-800 hover:bg-slate-700 rounded-lg">
                       <Save className="h-3.5 w-3.5 mr-1" /> Guardar
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => { setShowNuevo(false); setNuevo({ nombre: '', precio: '', stock: '' }) }} className="rounded-lg">
@@ -176,41 +186,61 @@ export default function ProductoAdminModal({ open, onClose }: ProductoAdminModal
 
               {/* Existing products */}
               {productos.map(p => {
-                const vals = editando[p.id] ?? { precio: String(p.precio), stock: '' }
+                const vals = editando[p.id] ?? { precio: String(p.precio), stock: '', imagen_url: p.imagen_url }
                 return (
                   <div key={p.id} className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl p-3">
+                    {/* Photo */}
+                    <div
+                      className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center cursor-pointer relative group flex-shrink-0"
+                      onClick={() => fileRefs.current[p.id]?.click()}
+                    >
+                      {vals.imagen_url
+                        ? <Image src={vals.imagen_url} alt={p.nombre} fill className="object-cover" />
+                        : <Camera className="h-5 w-5 text-slate-300" />
+                      }
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        {uploading === p.id
+                          ? <Loader2 className="h-4 w-4 text-white animate-spin" />
+                          : <Camera className="h-4 w-4 text-white" />
+                        }
+                      </div>
+                    </div>
+                    <input
+                      ref={el => { fileRefs.current[p.id] = el }}
+                      type="file" accept="image/*" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(p, f) }}
+                    />
+
+                    {/* Fields */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-800 truncate">{p.nombre}</p>
-                      <div className="flex items-center gap-2 mt-1.5">
+                      <p className="text-sm font-bold text-slate-800 truncate mb-1.5">{p.nombre}</p>
+                      <div className="flex items-center gap-2">
                         <div>
                           <label className="text-xs text-slate-400">Precio Q</label>
-                          <Input
-                            type="number" step="0.01" min="0"
+                          <Input type="number" step="0.01" min="0"
                             value={vals.precio}
                             onChange={e => setEditando(prev => ({ ...prev, [p.id]: { ...vals, precio: e.target.value } }))}
-                            className="h-8 w-24 rounded-lg text-sm"
-                          />
+                            className="h-8 w-24 rounded-lg text-sm" />
                         </div>
                         <div>
                           <label className="text-xs text-slate-400">Stock</label>
-                          <Input
-                            type="number" min="0"
-                            placeholder="—"
+                          <Input type="number" min="0" placeholder="—"
                             value={vals.stock}
                             onChange={e => setEditando(prev => ({ ...prev, [p.id]: { ...vals, stock: e.target.value } }))}
-                            className="h-8 w-20 rounded-lg text-sm"
-                          />
+                            className="h-8 w-20 rounded-lg text-sm" />
                         </div>
                       </div>
                     </div>
+
+                    {/* Actions */}
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <button
                         onClick={() => handleSaveProducto(p)}
-                        disabled={saving}
-                        className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center transition-colors"
+                        disabled={saving === p.id}
+                        className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center transition-colors disabled:opacity-50"
                         title="Guardar"
                       >
-                        <Save className="h-3.5 w-3.5" />
+                        {saving === p.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                       </button>
                       <button
                         onClick={() => handleEliminar(p)}
