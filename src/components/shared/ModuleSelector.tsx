@@ -2,28 +2,28 @@
 
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { LogOut, TreePine, UtensilsCrossed, CalendarDays, BarChart3, ChevronRight } from 'lucide-react'
+import { LogOut, BedDouble, ChefHat, CalendarDays, BarChart3, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 
 const MODULES = [
   {
     href: '/cabanas',
-    icon: TreePine,
+    icon: BedDouble,
     title: 'Cabañas',
-    subtitle: 'Hospedaje · Reservas · Vapepass',
+    subtitle: 'Hospedaje · Reservas · Daypass',
     from: 'from-teal-500',
     to: 'to-emerald-600',
-    shadow: 'shadow-teal-200',
+    shadow: 'shadow-teal-900',
     muted: 'text-teal-100',
   },
   {
     href: '/restaurante',
-    icon: UtensilsCrossed,
+    icon: ChefHat,
     title: 'Restaurante',
     subtitle: 'POS · Órdenes · Cobros',
     from: 'from-amber-500',
     to: 'to-orange-600',
-    shadow: 'shadow-amber-200',
+    shadow: 'shadow-amber-900',
     muted: 'text-amber-100',
   },
   {
@@ -33,7 +33,7 @@ const MODULES = [
     subtitle: 'Cotizaciones · Servicios · Cobros',
     from: 'from-violet-500',
     to: 'to-purple-700',
-    shadow: 'shadow-violet-200',
+    shadow: 'shadow-violet-900',
     muted: 'text-violet-100',
   },
 ]
@@ -50,38 +50,28 @@ export default function ModuleSelector({ nombre }: { nombre: string }) {
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-slate-50 flex flex-col select-none">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-8 pt-7 pb-4 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-slate-900 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-black text-base leading-none">M</span>
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-slate-900 leading-none">System Mg</h1>
-            <p className="text-sm text-slate-500 mt-0.5">{nombre}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => router.push('/reportes')}
-            className="w-10 h-10 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-all active:scale-[0.95]"
-            title="Reportes"
-          >
-            <BarChart3 className="h-4 w-4" />
-          </button>
-          <button
-            onClick={handleLogout}
-            className="w-10 h-10 rounded-xl bg-white border border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200 flex items-center justify-center text-slate-500 transition-all active:scale-[0.95]"
-            title="Cerrar sesión"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+    <div className="h-screen overflow-hidden bg-slate-950 flex items-center justify-center select-none relative">
 
-      {/* Module cards */}
-      <div className="flex-1 px-8 pb-8 grid grid-cols-3 gap-5 content-center">
+      {/* Reportes — esquina superior izquierda */}
+      <button
+        onClick={() => router.push('/reportes')}
+        className="absolute top-6 left-6 w-11 h-11 rounded-2xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-all active:scale-[0.95]"
+        title="Reportes"
+      >
+        <BarChart3 className="h-5 w-5" />
+      </button>
+
+      {/* Cerrar sesión — esquina superior derecha */}
+      <button
+        onClick={handleLogout}
+        className="absolute top-6 right-6 w-11 h-11 rounded-2xl bg-slate-800 hover:bg-red-900 flex items-center justify-center text-slate-400 hover:text-red-400 transition-all active:scale-[0.95]"
+        title="Cerrar sesión"
+      >
+        <LogOut className="h-5 w-5" />
+      </button>
+
+      {/* Module cards — centradas */}
+      <div className="grid grid-cols-3 gap-5 px-8 w-full max-w-4xl">
         {MODULES.map(mod => {
           const Icon = mod.icon
           return (
@@ -91,9 +81,9 @@ export default function ModuleSelector({ nombre }: { nombre: string }) {
               className={`
                 group bg-gradient-to-br ${mod.from} ${mod.to}
                 rounded-3xl p-8 text-left flex flex-col justify-between
-                shadow-xl ${mod.shadow}
-                transition-all duration-200 hover:scale-[1.02] active:scale-[0.97]
-                min-h-[200px]
+                shadow-2xl ${mod.shadow}
+                transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]
+                min-h-[220px]
               `}
             >
               <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
