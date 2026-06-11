@@ -23,10 +23,13 @@ export default function ProductoAdminModal({ open, onClose }: ProductoAdminModal
   const [productos, setProductos] = useState<Producto[]>([])
   const [editando, setEditando] = useState<Record<string, { precio: string; stock: string; imagen_url?: string }>>({})
   const [nuevo, setNuevo] = useState({ nombre: '', precio: '', stock: '' })
+  const [nuevoFoto, setNuevoFoto] = useState<File | null>(null)
+  const [nuevoFotoPreview, setNuevoFotoPreview] = useState<string | null>(null)
   const [saving, setSaving] = useState<string | boolean>(false)
   const [uploading, setUploading] = useState<string | null>(null)
   const [showNuevo, setShowNuevo] = useState(false)
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
+  const nuevoFileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!open) return
@@ -87,6 +90,11 @@ export default function ProductoAdminModal({ open, onClose }: ProductoAdminModal
     toast.success('Producto desactivado')
   }
 
+  function handleNuevoFotoSelect(file: File) {
+    setNuevoFoto(file)
+    setNuevoFotoPreview(URL.createObjectURL(file))
+  }
+
   async function handleAgregar() {
     if (!catSelected || !nuevo.nombre.trim() || !nuevo.precio) { toast.error('Completa nombre y precio'); return }
     const precio = parseFloat(nuevo.precio)
@@ -103,9 +111,20 @@ export default function ProductoAdminModal({ open, onClose }: ProductoAdminModal
       orden: productos.length,
     }).select().single()
     if (error || !data) { toast.error('Error al agregar'); setSaving(false); return }
-    setProductos(prev => [...prev, data])
-    setEditando(prev => ({ ...prev, [data.id]: { precio: String(data.precio), stock: '', imagen_url: undefined } }))
+
+    let imagen_url: string | undefined
+    if (nuevoFoto) {
+      try {
+        imagen_url = await uploadImage('productos', nuevoFoto, `prod-${data.id}`)
+        await createClient().from('productos').update({ imagen_url }).eq('id', data.id)
+      } catch { /* silent */ }
+    }
+
+    setProductos(prev => [...prev, { ...data, imagen_url }])
+    setEditando(prev => ({ ...prev, [data.id]: { precio: String(data.precio), stock: '', imagen_url } }))
     setNuevo({ nombre: '', precio: '', stock: '' })
+    setNuevoFoto(null)
+    setNuevoFotoPreview(null)
     setShowNuevo(false)
     toast.success(`${data.nombre} agregado`)
     setSaving(false)
@@ -145,31 +164,51 @@ export default function ProductoAdminModal({ open, onClose }: ProductoAdminModal
               {showNuevo ? (
                 <div className="border-2 border-dashed border-slate-300 rounded-xl p-3 space-y-2 bg-slate-50">
                   <p className="text-xs font-bold text-slate-500 uppercase">Nuevo producto</p>
-                  <Input
-                    placeholder="Nombre del producto"
-                    value={nuevo.nombre}
-                    onChange={e => setNuevo(p => ({ ...p, nombre: e.target.value }))}
-                    className="h-9 rounded-lg"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-slate-400">Precio (Q)</label>
-                      <Input type="number" step="0.01" min="0" placeholder="0.00"
-                        value={nuevo.precio} onChange={e => setNuevo(p => ({ ...p, precio: e.target.value }))}
-                        className="h-9 rounded-lg" />
+                  <div className="flex gap-3">
+                    {/* Photo picker */}
+                    <div
+                      onClick={() => nuevoFileRef.current?.click()}
+                      className="w-16 h-16 rounded-xl bg-slate-200 flex items-center justify-center cursor-pointer overflow-hidden relative group flex-shrink-0 border-2 border-dashed border-slate-300 hover:border-slate-500 transition-colors"
+                    >
+                      {nuevoFotoPreview
+                        ? <Image src={nuevoFotoPreview} alt="preview" fill className="object-cover" />
+                        : <Camera className="h-5 w-5 text-slate-400" />
+                      }
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Camera className="h-4 w-4 text-white" />
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-xs text-slate-400">Stock (opcional)</label>
-                      <Input type="number" min="0" placeholder="—"
-                        value={nuevo.stock} onChange={e => setNuevo(p => ({ ...p, stock: e.target.value }))}
-                        className="h-9 rounded-lg" />
+                    <input ref={nuevoFileRef} type="file" accept="image/*" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) handleNuevoFotoSelect(f) }} />
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Nombre del producto"
+                        value={nuevo.nombre}
+                        onChange={e => setNuevo(p => ({ ...p, nombre: e.target.value }))}
+                        className="h-9 rounded-lg mb-2"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-xs text-slate-400">Precio (Q)</label>
+                          <Input type="number" step="0.01" min="0" placeholder="0.00"
+                            value={nuevo.precio} onChange={e => setNuevo(p => ({ ...p, precio: e.target.value }))}
+                            className="h-8 rounded-lg" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-400">Stock (opcional)</label>
+                          <Input type="number" min="0" placeholder="—"
+                            value={nuevo.stock} onChange={e => setNuevo(p => ({ ...p, stock: e.target.value }))}
+                            className="h-8 rounded-lg" />
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" onClick={handleAgregar} disabled={!!saving} className="bg-slate-800 hover:bg-slate-700 rounded-lg">
-                      <Save className="h-3.5 w-3.5 mr-1" /> Guardar
+                      {saving === true ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Save className="h-3.5 w-3.5 mr-1" />}
+                      Guardar
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => { setShowNuevo(false); setNuevo({ nombre: '', precio: '', stock: '' }) }} className="rounded-lg">
+                    <Button size="sm" variant="ghost" onClick={() => { setShowNuevo(false); setNuevo({ nombre: '', precio: '', stock: '' }); setNuevoFoto(null); setNuevoFotoPreview(null) }} className="rounded-lg">
                       <X className="h-3.5 w-3.5 mr-1" /> Cancelar
                     </Button>
                   </div>
