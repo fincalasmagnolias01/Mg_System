@@ -115,28 +115,17 @@ export default function CabanasPage() {
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-slate-50">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-5 h-16 flex items-center gap-4 flex-shrink-0 shadow-sm">
+      <header className="bg-slate-900 text-white px-5 h-16 flex items-center gap-4 flex-shrink-0">
         <button
           onClick={() => router.push('/')}
-          className="w-11 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0"
-          title="Volver al menú"
+          className="w-11 h-11 rounded-xl hover:bg-slate-700 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0"
         >
-          <House className="h-5 w-5 text-slate-600" />
+          <House className="h-5 w-5 text-slate-300" />
         </button>
-
-        <div className="h-6 w-px bg-slate-200" />
-
-        {/* Stats chips */}
-        <div className="flex items-center gap-2 flex-1">
-          {stats.map(s => (
-            <div key={s.label} className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-              <span className={cn('h-2 w-2 rounded-full flex-shrink-0', s.dot)} />
-              <span className="text-lg font-black text-slate-800 leading-none">{s.value}</span>
-              <span className="text-xs text-slate-400 hidden sm:block">{s.label}</span>
-            </div>
-          ))}
+        <div className="flex items-center gap-2">
+          <BedDouble className="h-4 w-4 text-slate-400" />
+          <span className="text-base font-black">Cabañas</span>
         </div>
-
       </header>
 
       {/* Two-panel body */}
@@ -189,10 +178,19 @@ export default function CabanasPage() {
         {/* Right — detail panel */}
         <main className="flex-1 overflow-auto">
           {!selected ? (
-            <div className="h-full flex flex-col items-center justify-center gap-3 text-slate-300">
-              <BedDouble className="h-24 w-24" strokeWidth={1} />
-              <p className="text-lg font-semibold text-slate-400">Selecciona una cabaña</p>
-              <p className="text-sm text-slate-300">para gestionar reservaciones y estado</p>
+            <div className="h-full flex flex-col items-center justify-center gap-6">
+              <div className="grid grid-cols-2 gap-4">
+                {stats.map(s => (
+                  <div key={s.label} className="flex flex-col items-center justify-center bg-white border border-slate-200 rounded-3xl px-10 py-7 shadow-sm min-w-[140px]">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={cn('h-2.5 w-2.5 rounded-full flex-shrink-0', s.dot)} />
+                      <span className="text-5xl font-black text-slate-900 leading-none">{s.value}</span>
+                    </div>
+                    <span className="text-sm font-semibold text-slate-400 mt-1">{s.label}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-slate-300">Selecciona una cabaña para gestionarla</p>
             </div>
 
           ) : subView === 'estado' ? (
