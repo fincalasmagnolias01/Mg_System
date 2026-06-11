@@ -9,6 +9,7 @@ import CheckInModal from '@/components/cabanas/CheckInModal'
 import CheckOutModal from '@/components/cabanas/CheckOutModal'
 import ReservaModal from '@/components/cabanas/ReservaModal'
 import VapepassModal from '@/components/cabanas/VapepassModal'
+import CabanaAdminModal from '@/components/cabanas/CabanaAdminModal'
 import FacturaCabanaModal from '@/components/cabanas/FacturaCabanaModal'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -51,6 +52,7 @@ export default function CabanasPage() {
   const [loading, setLoading] = useState(true)
   const [changingEstado, setChangingEstado] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [showAdmin, setShowAdmin] = useState(false)
   const photoRef = useRef<HTMLInputElement>(null)
 
   const fetchCabanas = useCallback(async () => {
@@ -122,10 +124,7 @@ export default function CabanasPage() {
         >
           <House className="h-5 w-5 text-slate-300" />
         </button>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <BedDouble className="h-4 w-4 text-slate-400" />
-          <span className="text-base font-black">Cabañas</span>
-        </div>
+        <span className="text-base font-black flex-shrink-0">Cabañas</span>
 
         {/* Stats centrados */}
         <div className="flex-1 flex items-center justify-center gap-3">
@@ -137,6 +136,13 @@ export default function CabanasPage() {
             </div>
           ))}
         </div>
+        <button
+          onClick={() => setShowAdmin(true)}
+          className="w-9 h-9 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all flex-shrink-0"
+          title="Configuración"
+        >
+          <Settings className="h-4 w-4 text-slate-300" />
+        </button>
       </header>
 
       {/* Two-panel body */}
@@ -160,8 +166,7 @@ export default function CabanasPage() {
                   key={c.id}
                   onClick={() => { setSelected(c); setSubView(null) }}
                   className={cn(
-                    'w-full text-left px-3 py-3 flex items-center gap-3 border-l-4 border-b border-b-slate-800 transition-all',
-                    s.leftBorder,
+                    'w-full text-left px-3 py-3 flex items-center gap-3 border-b border-b-slate-800 transition-all',
                     isSelected ? 'bg-slate-700' : 'hover:bg-slate-800'
                   )}
                 >
@@ -323,6 +328,7 @@ export default function CabanasPage() {
       {selected && subView === 'factura' && selected.hospedaje_activo && (
         <FacturaCabanaModal cabana={selected} hospedaje={selected.hospedaje_activo} open onBack={() => setSubView(null)} onDone={handleDone} />
       )}
+      <CabanaAdminModal open={showAdmin} onClose={() => setShowAdmin(false)} onSaved={fetchCabanas} />
     </div>
   )
 }

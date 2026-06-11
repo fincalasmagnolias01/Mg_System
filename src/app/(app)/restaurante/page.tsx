@@ -10,7 +10,7 @@ import CurrentOrder from '@/components/restaurante/CurrentOrder'
 import PaymentModal from '@/components/restaurante/PaymentModal'
 import DiscountModal from '@/components/restaurante/DiscountModal'
 import { Input } from '@/components/ui/input'
-import { House, UtensilsCrossed, Settings } from 'lucide-react'
+import { House, Settings } from 'lucide-react'
 import { generateId } from '@/lib/utils'
 import { toast } from 'sonner'
 import ProductoAdminModal from '@/components/restaurante/ProductoAdminModal'
@@ -179,10 +179,7 @@ export default function RestaurantePage() {
         <button onClick={() => router.push('/')} className="w-11 h-11 rounded-xl hover:bg-slate-700 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0">
           <House className="h-5 w-5 text-slate-300" />
         </button>
-        <div className="flex items-center gap-2">
-          <UtensilsCrossed className="h-4 w-4 text-slate-400" />
-          <span className="text-base font-black">Restaurante</span>
-        </div>
+        <span className="text-base font-black">Restaurante</span>
         <div className="flex items-center gap-3 ml-auto">
           <span className="text-xs text-slate-400">Mesa:</span>
           <Input

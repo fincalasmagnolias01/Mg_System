@@ -176,12 +176,9 @@ export default function EventosPage() {
           >
             {view === 'list' ? <House className="h-5 w-5" /> : <ArrowLeft className="h-5 w-5" />}
           </button>
-          <div className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-slate-300" />
-            <h1 className="text-lg font-black">
-              {view === 'list' ? 'Eventos' : view === 'nuevo' ? 'Nuevo Evento' : `Evento #${selected?.numero_evento}`}
-            </h1>
-          </div>
+          <h1 className="text-lg font-black">
+            {view === 'list' ? 'Eventos' : view === 'nuevo' ? 'Nuevo Evento' : `Evento #${selected?.numero_evento}`}
+          </h1>
         </div>
         {view === 'list' && (
           <button
