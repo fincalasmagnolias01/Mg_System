@@ -38,7 +38,7 @@ const ACTIONS = [
   { key: 'checkin'  as SubView, icon: LogIn,    label: 'Check In',  colors: 'bg-teal-50 border-teal-200 text-teal-700 hover:bg-teal-100'      },
   { key: 'checkout' as SubView, icon: LogOut,   label: 'Check Out', colors: 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'          },
   { key: 'reserva'  as SubView, icon: Calendar, label: 'Reservar',  colors: 'bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100'          },
-  { key: 'vapepass' as SubView, icon: Zap,      label: 'Vapepass',  colors: 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'  },
+  { key: 'vapepass' as SubView, icon: Zap,      label: 'Daypass',   colors: 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'  },
   { key: 'factura'  as SubView, icon: Receipt,  label: 'Facturar',  colors: 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100' },
   { key: 'estado'   as SubView, icon: Settings, label: 'Estado',    colors: 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'   },
 ]

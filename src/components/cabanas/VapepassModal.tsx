@@ -79,16 +79,16 @@ export default function VapepassModal({ cabana, hospedaje, open, onBack, onDone 
       total,
     })
 
-    if (error) { toast.error('Error al registrar Vapepass'); setLoading(false); return }
+    if (error) { toast.error('Error al registrar Daypass'); setLoading(false); return }
 
     await supabase.from('movimientos_caja').insert({
       tipo: 'ingreso',
-      concepto: `Vapepass - ${tarifa!.etiqueta}`,
+      concepto: `Daypass - ${tarifa!.etiqueta}`,
       monto: total,
       referencia_tipo: 'vapepass',
     })
 
-    toast.success(`Vapepass vendido · ${formatCurrency(total)}`)
+    toast.success(`Daypass vendido · ${formatCurrency(total)}`)
     setLoading(false)
     onDone()
   }
@@ -99,7 +99,7 @@ export default function VapepassModal({ cabana, hospedaje, open, onBack, onDone 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-amber-500" />
-            Vapepass · Cabaña #{cabana.numero}
+            Daypass · Cabaña #{cabana.numero}
           </DialogTitle>
         </DialogHeader>
 
@@ -162,7 +162,7 @@ export default function VapepassModal({ cabana, hospedaje, open, onBack, onDone 
           <Button size="lg" onClick={handleVender} disabled={loading || !tarifa || total === 0}
             className="bg-amber-500 hover:bg-amber-600 text-white px-8">
             {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            Vender Vapepass
+            Vender Daypass
           </Button>
         </DialogFooter>
       </DialogContent>
