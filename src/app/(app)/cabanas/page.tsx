@@ -153,9 +153,9 @@ export default function CabanasPage() {
                   )}
                 >
                   {/* Thumbnail or number */}
-                  <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-slate-700 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-slate-700 flex items-center justify-center">
                     {c.imagen_url ? (
-                      <Image src={c.imagen_url} alt={c.nombre} width={40} height={40} className="w-full h-full object-cover" />
+                      <Image src={c.imagen_url} alt={c.nombre} width={56} height={56} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-sm font-black text-slate-400">#{c.numero}</span>
                     )}
