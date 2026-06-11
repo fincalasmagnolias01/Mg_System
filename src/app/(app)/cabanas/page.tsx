@@ -49,7 +49,6 @@ export default function CabanasPage() {
   const [selected, setSelected] = useState<Cabana | null>(null)
   const [subView, setSubView] = useState<SubView>(null)
   const [loading, setLoading] = useState(true)
-  const [hora, setHora] = useState('')
   const [changingEstado, setChangingEstado] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const photoRef = useRef<HTMLInputElement>(null)
@@ -74,9 +73,7 @@ export default function CabanasPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cabanas' }, fetchCabanas)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'hospedajes' }, fetchCabanas)
       .subscribe()
-    const timer = setInterval(() =>
-      setHora(new Date().toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' })), 1000)
-    return () => { supabase.removeChannel(ch); clearInterval(timer) }
+    return () => { supabase.removeChannel(ch) }
   }, [fetchCabanas])
 
   useEffect(() => {
@@ -140,9 +137,6 @@ export default function CabanasPage() {
           ))}
         </div>
 
-        <div className="flex items-center gap-2 ml-auto">
-          <span className="font-mono text-sm font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg">{hora}</span>
-        </div>
       </header>
 
       {/* Two-panel body */}
