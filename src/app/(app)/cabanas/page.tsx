@@ -12,8 +12,8 @@ import VapepassModal from '@/components/cabanas/VapepassModal'
 import FacturaCabanaModal from '@/components/cabanas/FacturaCabanaModal'
 import { Badge } from '@/components/ui/badge'
 import {
-  House, RefreshCw, LogIn, LogOut, Calendar,
-  Zap, Receipt, Settings, Users, BedDouble, Camera, Loader2,
+  House, LogIn, LogOut, Calendar,
+  Zap, Receipt, Settings, BedDouble, Camera, Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -142,9 +142,6 @@ export default function CabanasPage() {
 
         <div className="flex items-center gap-2 ml-auto">
           <span className="font-mono text-sm font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg">{hora}</span>
-          <button onClick={fetchCabanas} className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all">
-            <RefreshCw className="h-4 w-4 text-slate-500" />
-          </button>
         </div>
       </header>
 

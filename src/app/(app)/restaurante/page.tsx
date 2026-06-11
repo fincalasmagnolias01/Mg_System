@@ -10,9 +10,10 @@ import CurrentOrder from '@/components/restaurante/CurrentOrder'
 import PaymentModal from '@/components/restaurante/PaymentModal'
 import DiscountModal from '@/components/restaurante/DiscountModal'
 import { Input } from '@/components/ui/input'
-import { House, UtensilsCrossed } from 'lucide-react'
+import { House, UtensilsCrossed, Settings } from 'lucide-react'
 import { generateId } from '@/lib/utils'
 import { toast } from 'sonner'
+import ProductoAdminModal from '@/components/restaurante/ProductoAdminModal'
 
 const CATEGORIAS_PERMITIDAS = ['bebidas', 'alcohol', 'desayuno', 'plato', 'postre']
 
@@ -30,6 +31,7 @@ export default function RestaurantePage() {
   const [showDiscount, setShowDiscount] = useState(false)
   const [ordenId, setOrdenId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showAdmin, setShowAdmin] = useState(false)
 
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0)
   const total = subtotal - descuento + propina
@@ -181,7 +183,7 @@ export default function RestaurantePage() {
           <UtensilsCrossed className="h-4 w-4 text-slate-400" />
           <span className="text-base font-black">Restaurante</span>
         </div>
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-3 ml-auto">
           <span className="text-xs text-slate-400">Mesa:</span>
           <Input
             value={mesa}
@@ -189,6 +191,13 @@ export default function RestaurantePage() {
             placeholder="1"
             className="w-16 h-9 bg-slate-800 border-slate-700 text-white text-center rounded-xl font-bold"
           />
+          <button
+            onClick={() => setShowAdmin(true)}
+            className="w-9 h-9 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all"
+            title="Gestionar productos"
+          >
+            <Settings className="h-4 w-4 text-slate-300" />
+          </button>
         </div>
       </header>
 
@@ -223,6 +232,8 @@ export default function RestaurantePage() {
       </div>
 
       {/* Modals */}
+      <ProductoAdminModal open={showAdmin} onClose={() => setShowAdmin(false)} />
+
       <VariantModal
         producto={variantProd}
         open={!!variantProd}
