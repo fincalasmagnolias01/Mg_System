@@ -211,9 +211,9 @@ export default function CabanasPage() {
             </div>
 
           ) : (
-            <div className="p-5 flex flex-col gap-4 max-w-sm mx-auto w-full">
-              {/* Cabin image — read only, edit from config */}
-              <div className="relative w-full h-28 rounded-2xl overflow-hidden bg-slate-100 flex-shrink-0">
+            <div className="h-full flex gap-0">
+              {/* Left — image */}
+              <div className="relative w-2/5 flex-shrink-0 bg-slate-100">
                 {selected.imagen_url ? (
                   <Image src={selected.imagen_url} alt={selected.nombre} fill className="object-cover" />
                 ) : (
@@ -224,56 +224,59 @@ export default function CabanasPage() {
                 )}
               </div>
 
-              {/* Cabin info */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cabaña #{selected.numero}</p>
-                    <h2 className="text-2xl font-black text-slate-900 mt-0.5">{selected.nombre}</h2>
-                  </div>
-                  <Badge variant={STATUS[selected.estado].badge} className="text-xs px-2.5 py-1">
-                    {STATUS[selected.estado].label}
-                  </Badge>
-                </div>
-                <div className="border-t border-slate-100 mt-3 pt-3">
-                  {selected.hospedaje_activo ? (
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
-                        <Users className="h-4 w-4 text-slate-500" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-900 text-sm">{selected.hospedaje_activo.clientes?.nombre}</p>
-                        <p className="text-xs text-slate-500">
-                          {selected.hospedaje_activo.adultos + selected.hospedaje_activo.ninos + selected.hospedaje_activo.bebes} personas ·{' '}
-                          {selected.hospedaje_activo.tipo === 'noche' ? 'Noche' : 'Día'}
-                        </p>
-                      </div>
+              {/* Right — info + actions */}
+              <div className="flex-1 p-5 flex flex-col gap-4 overflow-auto">
+                {/* Cabin info */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cabaña #{selected.numero}</p>
+                      <h2 className="text-xl font-black text-slate-900 mt-0.5">{selected.nombre}</h2>
                     </div>
-                  ) : (
-                    <p className="text-xs text-slate-400 flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      Cap. {selected.capacidad_max} personas · Q{selected.precio_adulto_noche.toFixed(0)}/adulto noche
-                    </p>
-                  )}
+                    <Badge variant={STATUS[selected.estado].badge} className="text-xs px-2.5 py-1 flex-shrink-0">
+                      {STATUS[selected.estado].label}
+                    </Badge>
+                  </div>
+                  <div className="border-t border-slate-100 mt-3 pt-3">
+                    {selected.hospedaje_activo ? (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                          <Users className="h-4 w-4 text-slate-500" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900 text-sm">{selected.hospedaje_activo.clientes?.nombre}</p>
+                          <p className="text-xs text-slate-500">
+                            {selected.hospedaje_activo.adultos + selected.hospedaje_activo.ninos + selected.hospedaje_activo.bebes} personas ·{' '}
+                            {selected.hospedaje_activo.tipo === 'noche' ? 'Noche' : 'Día'}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Cap. {selected.capacidad_max} · Q{selected.precio_adulto_noche.toFixed(0)}/adulto noche
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Actions */}
-              <div className="grid grid-cols-3 gap-3">
-                {ACTIONS.map(({ key, icon: Icon, label, colors }) => {
-                  const disabled =
-                    (key === 'checkin'  && selected.estado === 'ocupada') ||
-                    (key === 'checkout' && !selected.hospedaje_activo) ||
-                    (key === 'factura'  && !selected.hospedaje_activo)
-                  return (
-                    <button key={key} onClick={() => setSubView(key)} disabled={disabled}
-                      className={cn('h-20 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 font-semibold text-sm transition-all active:scale-[0.96] disabled:opacity-30 disabled:cursor-not-allowed', colors)}
-                    >
-                      <Icon className="h-5 w-5" />
-                      {label}
-                    </button>
-                  )
-                })}
+                {/* Actions */}
+                <div className="grid grid-cols-3 gap-2">
+                  {ACTIONS.map(({ key, icon: Icon, label, colors }) => {
+                    const disabled =
+                      (key === 'checkin'  && selected.estado === 'ocupada') ||
+                      (key === 'checkout' && !selected.hospedaje_activo) ||
+                      (key === 'factura'  && !selected.hospedaje_activo)
+                    return (
+                      <button key={key} onClick={() => setSubView(key)} disabled={disabled}
+                        className={cn('h-20 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 font-semibold text-sm transition-all active:scale-[0.96] disabled:opacity-30 disabled:cursor-not-allowed', colors)}
+                      >
+                        <Icon className="h-5 w-5" />
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           )}
