@@ -2,39 +2,27 @@
 
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { LogOut, BedDouble, ChefHat, CalendarDays, BarChart3, ChevronRight } from 'lucide-react'
+import { LogOut, TentTree, Utensils, PartyPopper, BarChart3, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 
 const MODULES = [
   {
     href: '/cabanas',
-    icon: BedDouble,
+    icon: TentTree,
     title: 'Cabañas',
     subtitle: 'Hospedaje · Reservas · Daypass',
-    from: 'from-teal-500',
-    to: 'to-emerald-600',
-    shadow: 'shadow-teal-900',
-    muted: 'text-teal-100',
   },
   {
     href: '/restaurante',
-    icon: ChefHat,
+    icon: Utensils,
     title: 'Restaurante',
     subtitle: 'POS · Órdenes · Cobros',
-    from: 'from-amber-500',
-    to: 'to-orange-600',
-    shadow: 'shadow-amber-900',
-    muted: 'text-amber-100',
   },
   {
     href: '/eventos',
-    icon: CalendarDays,
+    icon: PartyPopper,
     title: 'Eventos',
     subtitle: 'Cotizaciones · Servicios · Cobros',
-    from: 'from-violet-500',
-    to: 'to-purple-700',
-    shadow: 'shadow-violet-900',
-    muted: 'text-violet-100',
   },
 ]
 
@@ -78,21 +66,15 @@ export default function ModuleSelector({ nombre }: { nombre: string }) {
             <button
               key={mod.href}
               onClick={() => router.push(mod.href)}
-              className={`
-                group bg-gradient-to-br ${mod.from} ${mod.to}
-                rounded-3xl p-8 text-left flex flex-col justify-between
-                shadow-2xl ${mod.shadow}
-                transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]
-                min-h-[220px]
-              `}
+              className="group bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-3xl p-8 text-left flex flex-col justify-between shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.97] min-h-[220px]"
             >
-              <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
-                <Icon className="h-7 w-7 text-white" strokeWidth={1.75} />
+              <div className="w-14 h-14 rounded-2xl bg-slate-700 group-hover:bg-slate-600 flex items-center justify-center transition-colors">
+                <Icon className="h-7 w-7 text-slate-200" strokeWidth={1.75} />
               </div>
               <div>
                 <h3 className="text-2xl font-black text-white leading-tight">{mod.title}</h3>
-                <p className={`text-sm mt-1 ${mod.muted}`}>{mod.subtitle}</p>
-                <div className="flex items-center gap-1 mt-3 text-white/60">
+                <p className="text-sm mt-1 text-slate-400">{mod.subtitle}</p>
+                <div className="flex items-center gap-1 mt-3 text-slate-500">
                   <span className="text-xs font-semibold">Abrir</span>
                   <ChevronRight className="h-3 w-3" />
                 </div>
