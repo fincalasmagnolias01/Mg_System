@@ -211,8 +211,8 @@ export default function CabanasPage() {
             </div>
 
           ) : (
-            <div className="h-full flex gap-0">
-              {/* Left — image */}
+            <div className="h-full flex flex-row-reverse gap-0">
+              {/* Right — image */}
               <div className="relative w-2/5 flex-shrink-0 bg-slate-100">
                 {selected.imagen_url ? (
                   <Image src={selected.imagen_url} alt={selected.nombre} fill className="object-cover" />
