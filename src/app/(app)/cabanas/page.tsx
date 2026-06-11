@@ -13,21 +13,21 @@ import FacturaCabanaModal from '@/components/cabanas/FacturaCabanaModal'
 import { Badge } from '@/components/ui/badge'
 import {
   House, LogIn, LogOut, Calendar,
-  Zap, Receipt, Settings, BedDouble, Camera, Loader2,
+  Zap, Receipt, Settings, BedDouble, Camera, Loader2, Users,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 
 const STATUS: Record<EstadoCabana, {
-  label: string; dot: string; leftBorder: string
+  label: string; dot: string; leftBorder: string; textColor: string
   badge: 'success' | 'destructive' | 'warning' | 'info' | 'muted'
 }> = {
-  disponible:    { label: 'Disponible',    dot: 'bg-emerald-500', leftBorder: 'border-l-emerald-500', badge: 'success'     },
-  ocupada:       { label: 'Ocupada',       dot: 'bg-red-500',     leftBorder: 'border-l-red-500',     badge: 'destructive' },
-  reservada:     { label: 'Reservada',     dot: 'bg-amber-500',   leftBorder: 'border-l-amber-500',   badge: 'warning'     },
-  limpieza:      { label: 'Limpieza',      dot: 'bg-sky-500',     leftBorder: 'border-l-sky-500',     badge: 'info'        },
-  mantenimiento: { label: 'Mantenimiento', dot: 'bg-slate-400',   leftBorder: 'border-l-slate-300',   badge: 'muted'       },
+  disponible:    { label: 'Disponible',    dot: 'bg-emerald-500', leftBorder: 'border-l-emerald-500', textColor: 'text-emerald-400', badge: 'success'     },
+  ocupada:       { label: 'Ocupada',       dot: 'bg-red-500',     leftBorder: 'border-l-red-500',     textColor: 'text-red-400',     badge: 'destructive' },
+  reservada:     { label: 'Reservada',     dot: 'bg-amber-500',   leftBorder: 'border-l-amber-500',   textColor: 'text-amber-400',   badge: 'warning'     },
+  limpieza:      { label: 'Limpieza',      dot: 'bg-sky-500',     leftBorder: 'border-l-sky-500',     textColor: 'text-sky-400',     badge: 'info'        },
+  mantenimiento: { label: 'Mantenimiento', dot: 'bg-slate-400',   leftBorder: 'border-l-slate-300',   textColor: 'text-slate-400',   badge: 'muted'       },
 }
 
 const ESTADOS: EstadoCabana[] = ['disponible', 'reservada', 'ocupada', 'limpieza', 'mantenimiento']
@@ -122,9 +122,20 @@ export default function CabanasPage() {
         >
           <House className="h-5 w-5 text-slate-300" />
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <BedDouble className="h-4 w-4 text-slate-400" />
           <span className="text-base font-black">Cabañas</span>
+        </div>
+
+        {/* Stats centrados */}
+        <div className="flex-1 flex items-center justify-center gap-3">
+          {stats.map(s => (
+            <div key={s.label} className="flex items-center gap-2 bg-slate-800 rounded-xl px-4 py-2">
+              <span className={cn('h-2 w-2 rounded-full flex-shrink-0', s.dot)} />
+              <span className="text-lg font-black text-white leading-none">{s.value}</span>
+              <span className="text-xs text-slate-400">{s.label}</span>
+            </div>
+          ))}
         </div>
       </header>
 
@@ -132,13 +143,13 @@ export default function CabanasPage() {
       <div className="flex-1 flex overflow-hidden">
 
         {/* Left — cabin list */}
-        <aside className="w-64 bg-white border-r border-slate-200 flex-shrink-0 overflow-y-auto">
-          <div className="px-3 py-2 border-b bg-slate-50">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">8 Cabañas</p>
+        <aside className="w-64 bg-slate-900 flex-shrink-0 overflow-y-auto">
+          <div className="px-3 py-2 border-b border-slate-800">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{cabanas.length} Cabañas</p>
           </div>
           {loading ? (
             <div className="p-3 space-y-1.5">
-              {Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-16 rounded-xl bg-slate-100 animate-pulse" />)}
+              {Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-16 rounded-xl bg-slate-800 animate-pulse" />)}
             </div>
           ) : (
             cabanas.map(c => {
@@ -149,22 +160,22 @@ export default function CabanasPage() {
                   key={c.id}
                   onClick={() => { setSelected(c); setSubView(null) }}
                   className={cn(
-                    'w-full text-left px-3 py-3 flex items-center gap-3 border-l-4 border-b border-b-slate-100 transition-all',
+                    'w-full text-left px-3 py-3 flex items-center gap-3 border-l-4 border-b border-b-slate-800 transition-all',
                     s.leftBorder,
-                    isSelected ? 'bg-teal-50' : 'hover:bg-slate-50'
+                    isSelected ? 'bg-slate-700' : 'hover:bg-slate-800'
                   )}
                 >
                   {/* Thumbnail or number */}
-                  <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-slate-700 flex items-center justify-center">
                     {c.imagen_url ? (
                       <Image src={c.imagen_url} alt={c.nombre} width={40} height={40} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-sm font-black text-slate-500">#{c.numero}</span>
+                      <span className="text-sm font-black text-slate-400">#{c.numero}</span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide leading-none">{s.label}</p>
-                    <p className="text-sm font-bold text-slate-700 truncate mt-0.5">
+                    <p className={cn('text-xs font-semibold uppercase tracking-wide leading-none', s.textColor)}>{s.label}</p>
+                    <p className="text-sm font-bold text-slate-200 truncate mt-0.5">
                       {c.hospedaje_activo?.clientes?.nombre ?? c.nombre}
                     </p>
                   </div>
@@ -178,19 +189,9 @@ export default function CabanasPage() {
         {/* Right — detail panel */}
         <main className="flex-1 overflow-auto">
           {!selected ? (
-            <div className="h-full flex flex-col items-center justify-center gap-6">
-              <div className="grid grid-cols-2 gap-4">
-                {stats.map(s => (
-                  <div key={s.label} className="flex flex-col items-center justify-center bg-white border border-slate-200 rounded-3xl px-10 py-7 shadow-sm min-w-[140px]">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={cn('h-2.5 w-2.5 rounded-full flex-shrink-0', s.dot)} />
-                      <span className="text-5xl font-black text-slate-900 leading-none">{s.value}</span>
-                    </div>
-                    <span className="text-sm font-semibold text-slate-400 mt-1">{s.label}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-slate-300">Selecciona una cabaña para gestionarla</p>
+            <div className="h-full flex flex-col items-center justify-center gap-3 text-slate-300">
+              <BedDouble className="h-20 w-20" strokeWidth={1} />
+              <p className="text-sm text-slate-400">Selecciona una cabaña</p>
             </div>
 
           ) : subView === 'estado' ? (
