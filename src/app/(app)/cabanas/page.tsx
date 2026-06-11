@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { uploadImage } from '@/lib/storage'
 import { Cabana, EstadoCabana } from '@/types'
 import CheckInModal from '@/components/cabanas/CheckInModal'
 import CheckOutModal from '@/components/cabanas/CheckOutModal'
@@ -14,7 +13,7 @@ import FacturaCabanaModal from '@/components/cabanas/FacturaCabanaModal'
 import { Badge } from '@/components/ui/badge'
 import {
   House, LogIn, LogOut, Calendar,
-  Zap, Receipt, Settings, BedDouble, Camera, Loader2, Users,
+  Zap, Receipt, Settings, BedDouble, Loader2, Users,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -51,9 +50,7 @@ export default function CabanasPage() {
   const [subView, setSubView] = useState<SubView>(null)
   const [loading, setLoading] = useState(true)
   const [changingEstado, setChangingEstado] = useState(false)
-  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [showAdmin, setShowAdmin] = useState(false)
-  const photoRef = useRef<HTMLInputElement>(null)
 
   const fetchCabanas = useCallback(async () => {
     const supabase = createClient()
@@ -93,18 +90,6 @@ export default function CabanasPage() {
     await createClient().from('cabanas').update({ estado }).eq('id', selected.id)
     toast.success(`Estado: ${STATUS[estado].label}`)
     fetchCabanas(); setSubView(null); setChangingEstado(false)
-  }
-
-  async function handlePhotoUpload(file: File) {
-    if (!selected) return
-    setUploadingPhoto(true)
-    try {
-      const url = await uploadImage('cabanas', file, `cabana-${selected.id}`)
-      await createClient().from('cabanas').update({ imagen_url: url }).eq('id', selected.id)
-      fetchCabanas()
-      toast.success('Foto actualizada')
-    } catch { toast.error('Error al subir foto') }
-    finally { setUploadingPhoto(false) }
   }
 
   const stats = [
@@ -150,9 +135,6 @@ export default function CabanasPage() {
 
         {/* Left — cabin list */}
         <aside className="w-64 bg-slate-900 flex-shrink-0 overflow-y-auto">
-          <div className="px-3 py-2 border-b border-slate-800">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{cabanas.length} Cabañas</p>
-          </div>
           {loading ? (
             <div className="p-3 space-y-1.5">
               {Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-16 rounded-xl bg-slate-800 animate-pulse" />)}
@@ -228,8 +210,8 @@ export default function CabanasPage() {
 
           ) : (
             <div className="p-5 flex flex-col gap-4">
-              {/* Cabin image */}
-              <div className="group relative w-full h-44 rounded-2xl overflow-hidden bg-slate-100 flex-shrink-0">
+              {/* Cabin image — read only, edit from config */}
+              <div className="w-full h-44 rounded-2xl overflow-hidden bg-slate-100 flex-shrink-0">
                 {selected.imagen_url ? (
                   <Image src={selected.imagen_url} alt={selected.nombre} fill className="object-cover" />
                 ) : (
@@ -238,22 +220,6 @@ export default function CabanasPage() {
                     <p className="text-xs font-semibold">Sin foto</p>
                   </div>
                 )}
-                {/* Upload overlay */}
-                <button
-                  onClick={() => photoRef.current?.click()}
-                  disabled={uploadingPhoto}
-                  className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
-                >
-                  {uploadingPhoto
-                    ? <Loader2 className="h-8 w-8 text-white animate-spin" />
-                    : <div className="flex flex-col items-center gap-1 text-white">
-                        <Camera className="h-8 w-8" />
-                        <span className="text-xs font-semibold">Cambiar foto</span>
-                      </div>
-                  }
-                </button>
-                <input ref={photoRef} type="file" accept="image/*" className="hidden"
-                  onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(f) }} />
               </div>
 
               {/* Cabin info */}
