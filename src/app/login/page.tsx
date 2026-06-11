@@ -3,11 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { User, Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -18,109 +15,80 @@ export default function LoginPage() {
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
-    if (!usuario.trim() || !password) {
-      toast.error('Completa todos los campos')
-      return
-    }
+    if (!usuario.trim() || !password) { toast.error('Completa todos los campos'); return }
     setLoading(true)
-
     const supabase = createClient()
-    // Los usuarios se crean con email = usuario@systemmg.local
     const email = `${usuario.trim().toLowerCase()}@systemmg.local`
-
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (error) {
-      toast.error('Usuario o contraseña incorrectos')
-      setLoading(false)
-      return
-    }
-
+    if (error) { toast.error('Usuario o contraseña incorrectos'); setLoading(false); return }
     router.push('/')
     router.refresh()
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-      <div
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
-          backgroundSize: '32px 32px',
-        }}
-      />
-
-      <div className="relative w-full max-w-sm">
+    <div className="h-screen overflow-hidden bg-slate-50 flex items-center justify-center">
+      <div className="w-full max-w-sm px-6">
         {/* Brand */}
-        <div className="text-center mb-10">
-          <h1 className="text-5xl font-black text-white tracking-tight">System Mg</h1>
-          <p className="text-slate-400 mt-2 text-sm tracking-wide">Sistema de Gestión Integral</p>
+        <div className="mb-10 text-center">
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">System Mg</h1>
+          <p className="text-slate-400 text-sm mt-2">Ingresa tus credenciales para continuar</p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-3xl shadow-2xl p-8">
-          <h2 className="text-xl font-bold text-slate-700 mb-6 text-center">Iniciar Sesión</h2>
-
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div className="space-y-1.5">
-              <Label htmlFor="usuario">Usuario</Label>
-              <Input
-                id="usuario"
+        {/* Form */}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Usuario</label>
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              <input
                 type="text"
-                placeholder="admin"
                 value={usuario}
                 onChange={e => setUsuario(e.target.value)}
-                className="h-14 text-base"
+                placeholder="admin"
                 autoComplete="username"
-                autoFocus
                 autoCapitalize="none"
+                autoFocus
+                className="w-full h-13 bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-900 focus:outline-none rounded-2xl pl-11 pr-4 text-slate-900 placeholder:text-slate-300 transition-colors text-base"
+                style={{ height: '52px' }}
               />
             </div>
+          </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Contraseña</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPass ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="h-14 text-base pr-12"
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => setShowPass(!showPass)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  {showPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Contraseña</label>
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              <input
+                type={showPass ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                className="w-full h-13 bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-900 focus:outline-none rounded-2xl pl-11 pr-12 text-slate-900 placeholder:text-slate-300 transition-colors text-base"
+                style={{ height: '52px' }}
+              />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowPass(!showPass)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-600 transition-colors"
+              >
+                {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
+          </div>
 
-            <Button
-              type="submit"
-              size="xl"
-              className="w-full text-base font-bold rounded-2xl mt-2"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Ingresando...
-                </>
-              ) : (
-                'Ingresar'
-              )}
-            </Button>
-          </form>
-        </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-13 bg-slate-900 hover:bg-slate-700 disabled:opacity-50 text-white font-bold rounded-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-base mt-2"
+            style={{ height: '52px' }}
+          >
+            {loading ? <><Loader2 className="h-5 w-5 animate-spin" /> Ingresando...</> : 'Ingresar'}
+          </button>
+        </form>
 
-        <p className="text-center text-slate-600 text-xs mt-6">
-          © 2025 System Mg
-        </p>
+        <p className="text-center text-slate-300 text-xs mt-10">© 2025 System Mg</p>
       </div>
     </div>
   )

@@ -2,40 +2,39 @@
 
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
-import { LogOut, BarChart3 } from 'lucide-react'
+import { LogOut, TreePine, UtensilsCrossed, CalendarDays, BarChart3, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 
 const MODULES = [
   {
     href: '/cabanas',
-    emoji: '🏡',
-    title: 'CABAÑAS',
+    icon: TreePine,
+    title: 'Cabañas',
     subtitle: 'Hospedaje · Reservas · Vapepass',
-    gradient: 'from-emerald-500 to-teal-600',
-    shadow: 'shadow-emerald-200',
-    bg: 'bg-emerald-50',
-    ring: 'ring-emerald-200',
+    from: 'from-teal-500',
+    to: 'to-emerald-600',
+    shadow: 'shadow-teal-200',
+    muted: 'text-teal-100',
   },
   {
     href: '/restaurante',
-    emoji: '🍽️',
-    title: 'RESTAURANTE',
-    subtitle: 'POS · Órdenes · Facturación',
-    gradient: 'from-blue-500 to-indigo-600',
-    shadow: 'shadow-blue-200',
-    bg: 'bg-blue-50',
-    ring: 'ring-blue-200',
+    icon: UtensilsCrossed,
+    title: 'Restaurante',
+    subtitle: 'POS · Órdenes · Cocina',
+    from: 'from-amber-500',
+    to: 'to-orange-600',
+    shadow: 'shadow-amber-200',
+    muted: 'text-amber-100',
   },
   {
     href: '/eventos',
-    emoji: '🎉',
-    title: 'EVENTOS',
+    icon: CalendarDays,
+    title: 'Eventos',
     subtitle: 'Cotizaciones · Servicios · Cobros',
-    gradient: 'from-violet-500 to-purple-600',
+    from: 'from-violet-500',
+    to: 'to-purple-700',
     shadow: 'shadow-violet-200',
-    bg: 'bg-violet-50',
-    ring: 'ring-violet-200',
+    muted: 'text-violet-100',
   },
 ]
 
@@ -50,82 +49,68 @@ export default function ModuleSelector({ nombre }: { nombre: string }) {
     toast.success('Sesión cerrada')
   }
 
-  const hora = new Date().toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' })
-  const fecha = new Date().toLocaleDateString('es-GT', { weekday: 'long', day: 'numeric', month: 'long' })
-
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shadow-sm">
+    <div className="h-screen overflow-hidden bg-slate-50 flex flex-col select-none">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-8 pt-7 pb-4 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg">
-            M
+          <div className="w-10 h-10 rounded-2xl bg-slate-900 flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-black text-base leading-none">M</span>
           </div>
           <div>
-            <h1 className="text-lg font-black text-slate-800 leading-none">System Mg</h1>
-            <p className="text-xs text-slate-400 capitalize">{fecha}</p>
+            <h1 className="text-xl font-black text-slate-900 leading-none">System Mg</h1>
+            <p className="text-sm text-slate-500 mt-0.5">{nombre}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold text-slate-700">{nombre}</p>
-            <p className="text-xs text-slate-400">{hora}</p>
-          </div>
-          <Button variant="ghost" size="icon" onClick={() => router.push('/reportes')} title="Reportes">
-            <BarChart3 className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={handleLogout} title="Cerrar sesión">
-            <LogOut className="h-5 w-5" />
-          </Button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push('/reportes')}
+            className="w-10 h-10 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-all active:scale-[0.95]"
+            title="Reportes"
+          >
+            <BarChart3 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={handleLogout}
+            className="w-10 h-10 rounded-xl bg-white border border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200 flex items-center justify-center text-slate-500 transition-all active:scale-[0.95]"
+            title="Cerrar sesión"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
-      </header>
+      </div>
 
       {/* Module cards */}
-      <main className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-6xl">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-black text-slate-800">¿Qué deseas administrar?</h2>
-            <p className="text-slate-500 mt-2">Selecciona un módulo para comenzar</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {MODULES.map((mod) => (
-              <button
-                key={mod.href}
-                onClick={() => router.push(mod.href)}
-                className={`
-                  group relative overflow-hidden rounded-3xl p-8 text-left
-                  bg-white border-2 border-transparent
-                  hover:border-current hover:${mod.ring}
-                  shadow-lg hover:shadow-2xl hover:${mod.shadow}
-                  transition-all duration-200 active:scale-[0.98]
-                  min-h-[280px] flex flex-col justify-between
-                `}
-              >
-                {/* Background gradient on hover */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${mod.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-200`} />
-
-                <div>
-                  {/* Emoji icon */}
-                  <div className={`w-20 h-20 rounded-2xl ${mod.bg} flex items-center justify-center text-5xl mb-6 group-hover:scale-110 transition-transform duration-200`}>
-                    {mod.emoji}
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-2xl font-black text-slate-800 tracking-wide">{mod.title}</h3>
-                  <p className="text-slate-500 mt-1 text-sm">{mod.subtitle}</p>
+      <div className="flex-1 px-8 pb-8 grid grid-cols-3 gap-5 content-center">
+        {MODULES.map(mod => {
+          const Icon = mod.icon
+          return (
+            <button
+              key={mod.href}
+              onClick={() => router.push(mod.href)}
+              className={`
+                group bg-gradient-to-br ${mod.from} ${mod.to}
+                rounded-3xl p-8 text-left flex flex-col justify-between
+                shadow-xl ${mod.shadow}
+                transition-all duration-200 hover:scale-[1.02] active:scale-[0.97]
+                min-h-[220px]
+              `}
+            >
+              <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                <Icon className="h-7 w-7 text-white" strokeWidth={1.75} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-white leading-tight">{mod.title}</h3>
+                <p className={`text-sm mt-1 ${mod.muted}`}>{mod.subtitle}</p>
+                <div className="flex items-center gap-1 mt-3 text-white/60">
+                  <span className="text-xs font-semibold">Abrir</span>
+                  <ChevronRight className="h-3 w-3" />
                 </div>
-
-                {/* Arrow indicator */}
-                <div className={`flex items-center gap-2 mt-6`}>
-                  <div className={`h-1.5 w-12 rounded-full bg-gradient-to-r ${mod.gradient} group-hover:w-20 transition-all duration-200`} />
-                  <span className="text-xs font-semibold text-slate-400 group-hover:text-slate-600 transition-colors">Abrir</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      </main>
+              </div>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

@@ -11,8 +11,9 @@ import PaymentModal from '@/components/restaurante/PaymentModal'
 import DiscountModal from '@/components/restaurante/DiscountModal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ArrowLeft, Search } from 'lucide-react'
-import { generateId } from '@/lib/utils'
+import { House, UtensilsCrossed, ChefHat } from 'lucide-react'
+import KitchenView from '@/components/restaurante/KitchenView'
+import { generateId, cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 export default function RestaurantePage() {
@@ -30,6 +31,7 @@ export default function RestaurantePage() {
   const [showDiscount, setShowDiscount] = useState(false)
   const [ordenId, setOrdenId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [kitchenMode, setKitchenMode] = useState(false)
 
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0)
   const total = subtotal - descuento + propina
@@ -208,34 +210,45 @@ export default function RestaurantePage() {
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Header */}
       <header className="bg-slate-900 text-white px-4 py-3 flex items-center gap-4 flex-shrink-0">
-        <Button variant="ghost" size="icon" onClick={() => router.push('/')} className="text-white hover:bg-slate-700">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <span className="text-lg font-black">🍽️ Restaurante POS</span>
-        <div className="flex-1 max-w-xs">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Buscar producto..."
-              value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
-              className="pl-9 h-9 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 rounded-xl"
-            />
-          </div>
+        <button onClick={() => router.push('/')} className="w-11 h-11 rounded-xl hover:bg-slate-700 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0">
+          <House className="h-5 w-5 text-slate-300" />
+        </button>
+        <div className="flex items-center gap-2">
+          <UtensilsCrossed className="h-4 w-4 text-slate-400" />
+          <span className="text-base font-black">Restaurante</span>
         </div>
         <div className="flex items-center gap-2 ml-auto">
-          <span className="text-xs text-slate-400">Mesa:</span>
-          <Input
-            value={mesa}
-            onChange={e => setMesa(e.target.value)}
-            placeholder="1"
-            className="w-16 h-9 bg-slate-800 border-slate-700 text-white text-center rounded-xl font-bold"
-          />
+          {!kitchenMode && (
+            <>
+              <span className="text-xs text-slate-400">Mesa:</span>
+              <Input
+                value={mesa}
+                onChange={e => setMesa(e.target.value)}
+                placeholder="1"
+                className="w-16 h-9 bg-slate-800 border-slate-700 text-white text-center rounded-xl font-bold"
+              />
+            </>
+          )}
+          <button
+            onClick={() => setKitchenMode(k => !k)}
+            className={cn(
+              'h-9 px-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all',
+              kitchenMode
+                ? 'bg-amber-500 text-white hover:bg-amber-400'
+                : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+            )}
+          >
+            <ChefHat className="h-4 w-4" />
+            {kitchenMode ? 'POS' : 'Cocina'}
+          </button>
         </div>
       </header>
 
+      {/* Kitchen mode */}
+      {kitchenMode && <KitchenView />}
+
       {/* POS 3-column layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className={cn('flex-1 flex overflow-hidden', kitchenMode && 'hidden')}>
         {/* Left: Categories */}
         <CategorySidebar
           categorias={categorias}

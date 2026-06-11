@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { formatCurrency } from '@/lib/utils'
-import { Trash2, Plus, Minus, ShoppingCart, ChefHat } from 'lucide-react'
+import { Trash2, Plus, Minus, ShoppingCart, ChefHat, Percent, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface CurrentOrderProps {
@@ -37,10 +37,10 @@ export default function CurrentOrder({
       <div className="p-4 border-b bg-slate-50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5 text-blue-600" />
+            <ShoppingCart className="h-5 w-5 text-slate-700" />
             <h3 className="font-black text-slate-800">Cuenta Actual</h3>
           </div>
-          {mesa && <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded-lg">Mesa {mesa}</span>}
+          {mesa && <span className="text-xs font-bold bg-slate-100 text-slate-700 px-2 py-1 rounded-lg">Mesa {mesa}</span>}
         </div>
       </div>
 
@@ -115,7 +115,7 @@ export default function CurrentOrder({
             <span>{formatCurrency(propina)}</span>
           </div>
         )}
-        <div className="flex justify-between font-black text-xl text-blue-700 pt-1">
+        <div className="flex justify-between font-black text-xl text-slate-900 pt-1">
           <span>TOTAL</span>
           <span>{formatCurrency(total)}</span>
         </div>
@@ -129,20 +129,22 @@ export default function CurrentOrder({
           <Button
             variant="outline"
             size="default"
-            className="rounded-xl text-xs"
+            className="rounded-xl text-xs gap-1.5"
             onClick={onDescuento}
             disabled={items.length === 0}
           >
-            % Descuento
+            <Percent className="h-3.5 w-3.5" />
+            Descuento
           </Button>
           <Button
             variant="outline"
             size="default"
-            className="rounded-xl text-xs"
+            className="rounded-xl text-xs gap-1.5"
             onClick={onPropina}
             disabled={items.length === 0}
           >
-            ✦ Propina
+            <Star className="h-3.5 w-3.5" />
+            Propina
           </Button>
         </div>
 
@@ -159,7 +161,7 @@ export default function CurrentOrder({
 
         <Button
           size="xl"
-          className="w-full rounded-xl text-base font-black bg-green-600 hover:bg-green-700"
+          className="w-full rounded-xl text-base font-black bg-slate-800 hover:bg-slate-700"
           onClick={onPagar}
           disabled={items.length === 0 || loading}
         >

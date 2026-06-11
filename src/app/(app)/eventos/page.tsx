@@ -10,18 +10,17 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { ArrowLeft, Plus, Users, Calendar, MapPin, Loader2, Trash2, ChevronRight } from 'lucide-react'
+import { House, ArrowLeft, Plus, Users, Calendar, MapPin, Loader2, Trash2, ChevronRight, CalendarDays, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 
 const ESTADO_CONFIG = {
-  cotizacion:  { label: 'Cotización',  variant: 'muted' as const,       color: 'text-gray-600' },
-  confirmado:  { label: 'Confirmado',  variant: 'info' as const,        color: 'text-blue-600' },
-  en_curso:    { label: 'En Curso',    variant: 'warning' as const,     color: 'text-yellow-600' },
-  completado:  { label: 'Completado',  variant: 'success' as const,     color: 'text-green-600' },
-  cancelado:   { label: 'Cancelado',   variant: 'destructive' as const, color: 'text-red-600' },
+  cotizacion:  { label: 'Cotización',  variant: 'muted' as const },
+  confirmado:  { label: 'Confirmado',  variant: 'info' as const  },
+  en_curso:    { label: 'En Curso',    variant: 'warning' as const },
+  completado:  { label: 'Completado',  variant: 'success' as const },
+  cancelado:   { label: 'Cancelado',   variant: 'destructive' as const },
 }
 
 type ModalView = 'list' | 'nuevo' | 'detalle'
@@ -35,7 +34,6 @@ export default function EventosPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  // Nuevo evento
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
   const [fecha, setFecha] = useState('')
@@ -86,13 +84,8 @@ export default function EventosPage() {
   async function handleCrearEvento() {
     if (!nombre || !fecha) { toast.error('Nombre del cliente y fecha son obligatorios'); return }
     setSaving(true)
-
     const supabase = createClient()
-    const { data: cliente } = await supabase
-      .from('clientes')
-      .insert({ nombre, telefono, nit: 'CF' })
-      .select('id').single()
-
+    const { data: cliente } = await supabase.from('clientes').insert({ nombre, telefono, nit: 'CF' }).select('id').single()
     if (!cliente) { toast.error('Error al crear cliente'); setSaving(false); return }
 
     const { data: evento, error } = await supabase.from('eventos').insert({
@@ -162,41 +155,56 @@ export default function EventosPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+    <div className="h-screen flex items-center justify-center bg-slate-100">
+      <Loader2 className="h-8 w-8 animate-spin text-slate-600" />
     </div>
   )
 
+  const handleBack = () => {
+    if (view !== 'list') { setView('list'); setSelected(null) }
+    else router.push('/')
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="h-screen overflow-hidden bg-slate-100 flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-10 shadow-sm">
-        <div className="px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => { if (view !== 'list') setView('list'); else router.push('/') }}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-black text-slate-800">
-              {view === 'list' ? '🎉 Eventos' : view === 'nuevo' ? 'Nuevo Evento' : `Evento #${selected?.numero_evento}`}
+      <header className="bg-slate-800 text-white px-5 py-3 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleBack}
+            className="w-11 h-11 rounded-xl hover:bg-slate-700 flex items-center justify-center transition-colors active:scale-[0.96]"
+          >
+            {view === 'list' ? <House className="h-5 w-5" /> : <ArrowLeft className="h-5 w-5" />}
+          </button>
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-slate-300" />
+            <h1 className="text-lg font-black">
+              {view === 'list' ? 'Eventos' : view === 'nuevo' ? 'Nuevo Evento' : `Evento #${selected?.numero_evento}`}
             </h1>
           </div>
-          {view === 'list' && (
-            <Button onClick={() => setView('nuevo')} className="gap-2 rounded-xl">
-              <Plus className="h-4 w-4" />
-              Nuevo Evento
-            </Button>
-          )}
         </div>
+        {view === 'list' && (
+          <button
+            onClick={() => setView('nuevo')}
+            className="w-14 h-14 rounded-2xl hover:bg-slate-700 flex items-center justify-center transition-colors active:scale-[0.96]"
+            title="Nuevo evento"
+          >
+            <Plus className="h-6 w-6" />
+          </button>
+        )}
       </header>
 
-      {/* LIST VIEW */}
+      {/* LIST */}
       {view === 'list' && (
-        <main className="flex-1 p-6">
+        <main className="flex-1 overflow-auto p-5">
           {eventos.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-              <span className="text-6xl mb-4">🎉</span>
+            <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-4">
+              <CalendarDays className="h-16 w-16 text-slate-300" />
               <p className="text-lg font-semibold">Sin eventos registrados</p>
-              <Button className="mt-4" onClick={() => setView('nuevo')}>Crear primer evento</Button>
+              <Button className="mt-2 bg-slate-800 hover:bg-slate-700" onClick={() => setView('nuevo')}>
+                <Plus className="h-4 w-4" />
+                Crear primer evento
+              </Button>
             </div>
           ) : (
             <div className="space-y-3 max-w-3xl mx-auto">
@@ -208,8 +216,8 @@ export default function EventosPage() {
                     onClick={() => { setSelected(evento); setView('detalle') }}
                     className="w-full bg-white rounded-2xl border p-4 text-left hover:shadow-md transition-all active:scale-[0.99] flex items-center gap-4"
                   >
-                    <div className="w-14 h-14 rounded-xl bg-violet-50 flex items-center justify-center text-2xl flex-shrink-0">
-                      🎉
+                    <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                      <CalendarDays className="h-7 w-7 text-slate-600" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -250,8 +258,8 @@ export default function EventosPage() {
 
       {/* NUEVO EVENTO */}
       {view === 'nuevo' && (
-        <main className="flex-1 p-6">
-          <div className="max-w-2xl mx-auto space-y-6">
+        <main className="flex-1 overflow-auto p-5">
+          <div className="max-w-2xl mx-auto space-y-5">
             <div className="bg-white rounded-2xl border p-6 space-y-4">
               <h3 className="font-bold text-slate-700">Datos del cliente</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -290,7 +298,6 @@ export default function EventosPage() {
               </div>
             </div>
 
-            {/* Servicios */}
             <div className="bg-white rounded-2xl border p-6 space-y-4">
               <h3 className="font-bold text-slate-700">Servicios</h3>
               <div className="grid grid-cols-2 gap-2">
@@ -298,14 +305,13 @@ export default function EventosPage() {
                   <button
                     key={s.id}
                     onClick={() => addServicio(s)}
-                    className="flex items-center justify-between p-3 rounded-xl border hover:bg-violet-50 hover:border-violet-300 transition-all text-left"
+                    className="flex items-center justify-between p-3 rounded-xl border hover:bg-slate-50 hover:border-slate-400 transition-all text-left"
                   >
                     <span className="text-sm font-semibold">{s.nombre}</span>
-                    <span className="text-sm font-black text-violet-600">{formatCurrency(s.precio_base)}</span>
+                    <span className="text-sm font-black text-slate-700">{formatCurrency(s.precio_base)}</span>
                   </button>
                 ))}
               </div>
-
               {servicios.length > 0 && (
                 <div className="space-y-2 pt-3 border-t">
                   {servicios.map(s => (
@@ -323,18 +329,18 @@ export default function EventosPage() {
                   <Separator />
                   <div className="flex justify-between font-black text-lg">
                     <span>Total</span>
-                    <span className="text-violet-600">{formatCurrency(subtotalEventos)}</span>
+                    <span className="text-slate-800">{formatCurrency(subtotalEventos)}</span>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 pb-5">
               <Button variant="outline" size="lg" className="flex-1" onClick={() => { resetForm(); setView('list') }}>
                 Cancelar
               </Button>
-              <Button size="lg" className="flex-1 bg-violet-600 hover:bg-violet-700" onClick={handleCrearEvento} disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              <Button size="lg" className="flex-1 bg-slate-800 hover:bg-slate-700" onClick={handleCrearEvento} disabled={saving}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                 Crear Evento
               </Button>
             </div>
@@ -342,35 +348,30 @@ export default function EventosPage() {
         </main>
       )}
 
-      {/* DETALLE EVENTO */}
+      {/* DETALLE */}
       {view === 'detalle' && selected && (
         <EventoDetalle
           evento={selected}
-          onBack={() => { setSelected(null); setView('list') }}
           onCambiarEstado={handleCambiarEstado}
           onCobrarAnticipo={handleCobrarAnticipo}
-          onRefresh={fetchEventos}
         />
       )}
     </div>
   )
 }
 
-function EventoDetalle({ evento, onBack, onCambiarEstado, onCobrarAnticipo, onRefresh }: {
+function EventoDetalle({ evento, onCambiarEstado, onCobrarAnticipo }: {
   evento: Evento
-  onBack: () => void
   onCambiarEstado: (id: string, estado: string) => void
   onCobrarAnticipo: (id: string, monto: number) => void
-  onRefresh: () => void
 }) {
   const [anticipo, setAnticipo] = useState('')
   const [showAnticipo, setShowAnticipo] = useState(false)
   const cfg = ESTADO_CONFIG[evento.estado]
 
   return (
-    <main className="flex-1 p-6">
+    <main className="flex-1 overflow-auto p-5">
       <div className="max-w-2xl mx-auto space-y-4">
-        {/* Info */}
         <div className="bg-white rounded-2xl border p-6 space-y-3">
           <div className="flex items-start justify-between">
             <div>
@@ -388,7 +389,6 @@ function EventoDetalle({ evento, onBack, onCambiarEstado, onCobrarAnticipo, onRe
           </div>
         </div>
 
-        {/* Servicios */}
         {evento.servicios_eventos && evento.servicios_eventos.length > 0 && (
           <div className="bg-white rounded-2xl border p-6 space-y-2">
             <h3 className="font-bold text-slate-700 mb-3">Servicios</h3>
@@ -418,15 +418,15 @@ function EventoDetalle({ evento, onBack, onCambiarEstado, onCobrarAnticipo, onRe
           </div>
         )}
 
-        {/* Acciones */}
         <div className="grid grid-cols-2 gap-3">
           {evento.saldo_pendiente > 0 && (
             <Button
               size="lg"
-              className="h-16 col-span-2 bg-green-600 hover:bg-green-700 rounded-2xl text-base font-bold"
+              className="h-16 col-span-2 bg-slate-800 hover:bg-slate-700 rounded-2xl text-base font-bold gap-2"
               onClick={() => setShowAnticipo(true)}
             >
-              💰 Cobrar Anticipo / Saldo
+              <DollarSign className="h-5 w-5" />
+              Cobrar Anticipo / Saldo
             </Button>
           )}
           {(['cotizacion', 'confirmado', 'en_curso', 'completado', 'cancelado'] as const).map(estado => (
@@ -462,7 +462,7 @@ function EventoDetalle({ evento, onBack, onCambiarEstado, onCobrarAnticipo, onRe
                 onCobrarAnticipo(evento.id, parseFloat(anticipo) || 0)
                 setAnticipo('')
                 setShowAnticipo(false)
-              }} className="bg-green-600 hover:bg-green-700 px-8">
+              }} className="bg-slate-800 hover:bg-slate-700 px-8">
                 Registrar Pago
               </Button>
             </DialogFooter>

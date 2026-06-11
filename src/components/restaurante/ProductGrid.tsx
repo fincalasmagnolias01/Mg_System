@@ -1,59 +1,99 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Producto, ItemOrden, VarianteOpcion } from '@/types'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, generateId } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { Camera, Loader2 } from 'lucide-react'
 import Image from 'next/image'
+import { createClient } from '@/lib/supabase'
+import { uploadImage } from '@/lib/storage'
 
 export default function ProductGrid({ productos, onSelect }: { productos: Producto[]; onSelect: (p: Producto) => void }) {
   return (
-    <ScrollArea className="flex-1 h-full">
-      <div className="p-4 grid grid-cols-3 xl:grid-cols-4 gap-3">
+    <div className="flex-1 h-full overflow-hidden">
+      <div className="h-full overflow-auto p-3 grid grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 auto-rows-min content-start">
         {productos.map(p => (
           <ProductTile key={p.id} producto={p} onSelect={onSelect} />
         ))}
         {productos.length === 0 && (
-          <div className="col-span-4 flex items-center justify-center h-48 text-slate-400">
-            <p>Sin productos en esta categoría</p>
+          <div className="col-span-4 flex items-center justify-center h-40 text-slate-400">
+            <p className="text-sm">Sin productos en esta categoría</p>
           </div>
         )}
       </div>
-    </ScrollArea>
+    </div>
   )
 }
 
 function ProductTile({ producto, onSelect }: { producto: Producto; onSelect: (p: Producto) => void }) {
+  const [imgUrl, setImgUrl] = useState(producto.imagen_url)
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  async function handlePhotoUpload(file: File) {
+    setUploading(true)
+    try {
+      const url = await uploadImage('productos', file, `prod-${producto.id}`)
+      await createClient().from('productos').update({ imagen_url: url }).eq('id', producto.id)
+      setImgUrl(url)
+    } catch {
+      // silent fail
+    } finally {
+      setUploading(false)
+    }
+  }
+
   return (
     <button
       onClick={() => onSelect(producto)}
       className={cn(
-        'group relative rounded-2xl border-2 border-border bg-white p-3',
+        'group relative rounded-xl border border-slate-200 bg-white p-2.5',
         'text-left transition-all active:scale-[0.96]',
-        'hover:border-blue-400 hover:shadow-md',
-        'flex flex-col gap-2 min-h-[110px]'
+        'hover:border-slate-400 hover:shadow-sm',
+        'flex flex-col gap-1.5 min-h-[100px]'
       )}
     >
-      {producto.imagen_url ? (
-        <div className="w-full h-16 rounded-xl overflow-hidden bg-slate-100">
-          <Image src={producto.imagen_url} alt={producto.nombre} width={120} height={64} className="w-full h-full object-cover" />
+      {/* Image area */}
+      {imgUrl ? (
+        <div className="w-full h-14 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+          <Image src={imgUrl} alt={producto.nombre} width={120} height={56} className="w-full h-full object-cover" />
         </div>
       ) : (
-        <div className="w-full h-10 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-          <span className="text-xs text-slate-400 font-medium text-center leading-tight px-1">
-            {producto.nombre.slice(0, 20)}
-          </span>
+        <div className="w-full h-14 rounded-lg bg-slate-50 flex items-center justify-center flex-shrink-0">
+          <Camera className="h-5 w-5 text-slate-300" />
         </div>
       )}
+
       <div className="flex-1">
         <p className="text-xs font-bold text-slate-700 leading-tight line-clamp-2">{producto.nombre}</p>
       </div>
-      <p className="text-sm font-black text-blue-600">
+      <p className="text-xs font-black text-slate-800">
         {producto.tiene_variantes ? 'Elegir →' : formatCurrency(producto.precio)}
       </p>
+
+      {/* Camera upload button */}
+      <button
+        type="button"
+        onClick={e => { e.stopPropagation(); fileRef.current?.click() }}
+        disabled={uploading}
+        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-lg bg-white/90 border border-slate-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all active:scale-[0.95] z-10"
+      >
+        {uploading
+          ? <Loader2 className="h-3 w-3 animate-spin text-slate-500" />
+          : <Camera className="h-3 w-3 text-slate-500" />
+        }
+      </button>
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(f) }}
+      />
     </button>
   )
 }
@@ -130,8 +170,8 @@ export function VariantModal({ producto, open, onClose, onAdd }: VariantModalPro
                       className={cn(
                         'px-4 py-2 rounded-xl border-2 text-sm font-semibold transition-all',
                         isSelected
-                          ? 'border-blue-600 bg-blue-600 text-white'
-                          : 'border-border hover:border-blue-400'
+                          ? 'border-slate-800 bg-slate-800 text-white'
+                          : 'border-border hover:border-slate-500'
                       )}
                     >
                       {label}
@@ -147,7 +187,7 @@ export function VariantModal({ producto, open, onClose, onAdd }: VariantModalPro
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-          <Button size="lg" onClick={handleAdd} disabled={!allSelected} className="px-8">
+          <Button size="lg" onClick={handleAdd} disabled={!allSelected} className="px-8 bg-slate-800 hover:bg-slate-700">
             Agregar · {formatCurrency(calcPrecio())}
           </Button>
         </DialogFooter>

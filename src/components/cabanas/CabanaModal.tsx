@@ -14,7 +14,7 @@ import CheckOutModal from './CheckOutModal'
 import ReservaModal from './ReservaModal'
 import VapepassModal from './VapepassModal'
 import FacturaCabanaModal from './FacturaCabanaModal'
-import { LogIn, LogOut, Calendar, DollarSign, Zap, Receipt, Settings } from 'lucide-react'
+import { LogIn, LogOut, Calendar, DollarSign, Zap, Receipt, Settings, ArrowLeft } from 'lucide-react'
 
 const ESTADO_CONFIG: Record<EstadoCabana, { label: string; color: string }> = {
   disponible:    { label: 'Disponible',    color: 'success' },
@@ -183,7 +183,9 @@ export default function CabanaModal({ cabana, open, onClose, onRefresh }: Cabana
                 </Button>
               ))}
             </div>
-            <Button variant="ghost" className="w-full" onClick={handleBack}>← Volver</Button>
+            <Button variant="ghost" className="w-full gap-2" onClick={handleBack}>
+              <ArrowLeft className="h-4 w-4" /> Volver
+            </Button>
           </div>
         )}
       </DialogContent>
