@@ -149,7 +149,7 @@ export default function CabanasPage() {
                   onClick={() => { setSelected(c); setSubView(null) }}
                   className={cn(
                     'w-full text-left px-3 py-3 flex items-center gap-3 border-b border-b-slate-800 transition-all',
-                    isSelected ? 'bg-slate-700' : 'hover:bg-slate-800'
+                    isSelected ? 'bg-slate-700 border-l-2 border-l-slate-400' : 'border-l-2 border-l-transparent hover:bg-slate-800'
                   )}
                 >
                   {/* Thumbnail or number */}
@@ -161,12 +161,14 @@ export default function CabanasPage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={cn('text-xs font-semibold uppercase tracking-wide leading-none', s.textColor)}>{s.label}</p>
-                    <p className="text-sm font-bold text-slate-200 truncate mt-0.5">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className={cn('h-2 w-2 rounded-full flex-shrink-0', s.dot)} />
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide leading-none">{s.label}</p>
+                    </div>
+                    <p className="text-sm font-bold text-slate-200 truncate">
                       {c.hospedaje_activo?.clientes?.nombre ?? c.nombre}
                     </p>
                   </div>
-                  <span className={cn('h-2.5 w-2.5 rounded-full flex-shrink-0', s.dot)} />
                 </button>
               )
             })
