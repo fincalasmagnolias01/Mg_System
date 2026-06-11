@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { formatCurrency } from '@/lib/utils'
-import { Trash2, Plus, Minus, ShoppingCart, ChefHat, Percent, Star } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Trash2, Plus, Minus, ShoppingCart, Percent, Star } from 'lucide-react'
 
 interface CurrentOrderProps {
   items: ItemOrden[]
@@ -17,7 +16,6 @@ interface CurrentOrderProps {
   onRemove: (tempId: string) => void
   onDescuento: () => void
   onPropina: () => void
-  onEnviarCocina: () => void
   onPagar: () => void
   onCerrar: () => void
   loading?: boolean
@@ -26,7 +24,7 @@ interface CurrentOrderProps {
 export default function CurrentOrder({
   items, mesa, descuento, propina,
   onQtyChange, onRemove, onDescuento, onPropina,
-  onEnviarCocina, onPagar, onCerrar, loading
+  onPagar, onCerrar, loading
 }: CurrentOrderProps) {
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0)
   const total = subtotal - descuento + propina
@@ -147,17 +145,6 @@ export default function CurrentOrder({
             Propina
           </Button>
         </div>
-
-        <Button
-          variant="outline"
-          size="lg"
-          className="w-full rounded-xl gap-2 text-amber-700 border-amber-200 hover:bg-amber-50"
-          onClick={onEnviarCocina}
-          disabled={items.length === 0 || loading}
-        >
-          <ChefHat className="h-4 w-4" />
-          Enviar a Cocina
-        </Button>
 
         <Button
           size="xl"

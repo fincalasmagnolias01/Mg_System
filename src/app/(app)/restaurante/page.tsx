@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Categoria, Producto, ItemOrden } from '@/types'
@@ -9,19 +9,18 @@ import ProductGrid, { VariantModal } from '@/components/restaurante/ProductGrid'
 import CurrentOrder from '@/components/restaurante/CurrentOrder'
 import PaymentModal from '@/components/restaurante/PaymentModal'
 import DiscountModal from '@/components/restaurante/DiscountModal'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { House, UtensilsCrossed, ChefHat } from 'lucide-react'
-import KitchenView from '@/components/restaurante/KitchenView'
-import { generateId, cn } from '@/lib/utils'
+import { House, UtensilsCrossed } from 'lucide-react'
+import { generateId } from '@/lib/utils'
 import { toast } from 'sonner'
+
+const CATEGORIAS_PERMITIDAS = ['bebidas', 'alcohol', 'desayuno', 'plato', 'postre']
 
 export default function RestaurantePage() {
   const router = useRouter()
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [productos, setProductos] = useState<Producto[]>([])
   const [catSelected, setCatSelected] = useState<string | null>(null)
-  const [busqueda, setBusqueda] = useState('')
   const [items, setItems] = useState<ItemOrden[]>([])
   const [mesa, setMesa] = useState('')
   const [descuento, setDescuento] = useState(0)
@@ -31,7 +30,6 @@ export default function RestaurantePage() {
   const [showDiscount, setShowDiscount] = useState(false)
   const [ordenId, setOrdenId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [kitchenMode, setKitchenMode] = useState(false)
 
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0)
   const total = subtotal - descuento + propina
@@ -41,8 +39,12 @@ export default function RestaurantePage() {
     supabase.from('categorias').select('*').eq('modulo', 'restaurante').eq('activo', true).order('orden')
       .then(({ data }) => {
         if (data && data.length > 0) {
-          setCategorias(data)
-          setCatSelected(data[0].id)
+          const filtradas = data.filter(c =>
+            CATEGORIAS_PERMITIDAS.some(k => c.nombre.toLowerCase().includes(k))
+          )
+          const lista = filtradas.length > 0 ? filtradas : data
+          setCategorias(lista)
+          setCatSelected(lista[0].id)
         }
       })
   }, [])
@@ -53,10 +55,6 @@ export default function RestaurantePage() {
     supabase.from('productos').select('*, categorias(*)').eq('categoria_id', catSelected).eq('disponible', true).order('orden')
       .then(({ data }) => { if (data) setProductos(data) })
   }, [catSelected])
-
-  const productosFiltrados = busqueda
-    ? productos.filter(p => p.nombre.toLowerCase().includes(busqueda.toLowerCase()))
-    : productos
 
   function handleSelectProduct(p: Producto) {
     if (p.tiene_variantes) {
@@ -102,40 +100,6 @@ export default function RestaurantePage() {
 
   function handlePropina() {
     setPropina(prev => prev > 0 ? 0 : Math.round(subtotal * 0.1 * 100) / 100)
-  }
-
-  async function handleEnviarCocina() {
-    if (items.length === 0) return
-    setLoading(true)
-    const supabase = createClient()
-
-    if (!ordenId) {
-      const { data: orden } = await supabase
-        .from('ordenes')
-        .insert({ mesa, subtotal, descuento, propina, total, estado: 'enviada_cocina' })
-        .select('id').single()
-
-      if (orden) {
-        setOrdenId(orden.id)
-        await supabase.from('detalle_orden').insert(
-          items.map(i => ({
-            orden_id: orden.id,
-            producto_id: i.producto_id,
-            nombre_producto: i.nombre_producto,
-            cantidad: i.cantidad,
-            precio_unitario: i.precio_unitario,
-            subtotal: i.subtotal,
-            variante: i.variante ?? {},
-            enviado_cocina: true,
-          }))
-        )
-      }
-    } else {
-      await supabase.from('ordenes').update({ estado: 'enviada_cocina', subtotal, descuento, propina, total }).eq('id', ordenId)
-    }
-
-    toast.success('✅ Orden enviada a cocina')
-    setLoading(false)
   }
 
   async function handlePagar(forma: 'efectivo' | 'tarjeta' | 'transferencia' | 'mixto', detalle: Record<string, number>, cambio: number) {
@@ -196,7 +160,7 @@ export default function RestaurantePage() {
       })
     }
 
-    toast.success(`💰 Pago registrado · Total: Q${total.toFixed(2)}`)
+    toast.success(`Pago registrado · Total: Q${total.toFixed(2)}`)
     resetOrder()
     setLoading(false)
   }
@@ -218,53 +182,31 @@ export default function RestaurantePage() {
           <span className="text-base font-black">Restaurante</span>
         </div>
         <div className="flex items-center gap-2 ml-auto">
-          {!kitchenMode && (
-            <>
-              <span className="text-xs text-slate-400">Mesa:</span>
-              <Input
-                value={mesa}
-                onChange={e => setMesa(e.target.value)}
-                placeholder="1"
-                className="w-16 h-9 bg-slate-800 border-slate-700 text-white text-center rounded-xl font-bold"
-              />
-            </>
-          )}
-          <button
-            onClick={() => setKitchenMode(k => !k)}
-            className={cn(
-              'h-9 px-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all',
-              kitchenMode
-                ? 'bg-amber-500 text-white hover:bg-amber-400'
-                : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
-            )}
-          >
-            <ChefHat className="h-4 w-4" />
-            {kitchenMode ? 'POS' : 'Cocina'}
-          </button>
+          <span className="text-xs text-slate-400">Mesa:</span>
+          <Input
+            value={mesa}
+            onChange={e => setMesa(e.target.value)}
+            placeholder="1"
+            className="w-16 h-9 bg-slate-800 border-slate-700 text-white text-center rounded-xl font-bold"
+          />
         </div>
       </header>
 
-      {/* Kitchen mode */}
-      {kitchenMode && <KitchenView />}
-
       {/* POS 3-column layout */}
-      <div className={cn('flex-1 flex overflow-hidden', kitchenMode && 'hidden')}>
-        {/* Left: Categories */}
+      <div className="flex-1 flex overflow-hidden">
         <CategorySidebar
           categorias={categorias}
           selected={catSelected}
-          onSelect={id => { setCatSelected(id); setBusqueda('') }}
+          onSelect={id => setCatSelected(id)}
         />
 
-        {/* Center: Products */}
         <main className="flex-1 overflow-hidden">
           <ProductGrid
-            productos={productosFiltrados}
+            productos={productos}
             onSelect={handleSelectProduct}
           />
         </main>
 
-        {/* Right: Current order */}
         <CurrentOrder
           items={items}
           mesa={mesa}
@@ -274,7 +216,6 @@ export default function RestaurantePage() {
           onRemove={tempId => setItems(prev => prev.filter(i => i.tempId !== tempId))}
           onDescuento={() => setShowDiscount(true)}
           onPropina={handlePropina}
-          onEnviarCocina={handleEnviarCocina}
           onPagar={() => setShowPayment(true)}
           onCerrar={resetOrder}
           loading={loading}
