@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import {
   House, TrendingUp, Receipt, BedDouble, CalendarDays,
-  Loader2, Utensils, Trophy, Lock, ChevronDown, ChevronUp,
+  Loader2, Utensils, Lock, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import CierreCajaModal from '@/components/reportes/CierreCajaModal'
@@ -42,7 +42,7 @@ export default function ReportesPage() {
   const [expandedCierre, setExpandedCierre] = useState<string | null>(null)
 
   const [stats, setStats]                     = useState<ResumenStats>({ ingresosDia: 0, ordenesDia: 0, cabanasOcupadas: 0, eventosActivos: 0 })
-  const [ventasRestaurante, setVentasRest]    = useState<{ nombre: string; total: number }[]>([])
+  const [ordenesHoy, setOrdenesHoy]           = useState<{ numero: number; mesa: string; total: number; hora: string }[]>([])
   const [hospedajesActivos, setHospedajes]    = useState<{ cabana: string; cliente: string; tipo: string; subtotal: number }[]>([])
   const [eventosLista, setEventos]            = useState<{ cliente: string; fecha: string; estado: string; total: number }[]>([])
   const [cierres, setCierres]                 = useState<CierreCaja[]>([])
@@ -63,13 +63,12 @@ export default function ReportesPage() {
 
     Promise.all([
       supabase.from('movimientos_caja').select('monto').eq('tipo', 'ingreso').gte('created_at', inicioHoy),
-      supabase.from('ordenes').select('id').eq('estado', 'pagada').gte('created_at', inicioHoy),
+      supabase.from('ordenes').select('numero_orden, mesa, total, created_at').eq('estado', 'pagada').gte('created_at', inicioHoy).order('created_at', { ascending: false }),
       supabase.from('cabanas').select('id').eq('estado', 'ocupada'),
       supabase.from('eventos').select('id').in('estado', ['confirmado', 'en_curso']),
       supabase.from('hospedajes').select('subtotal, tipo, cabanas(nombre), clientes(nombre)').eq('estado', 'activo'),
-      supabase.from('detalle_orden').select('nombre_producto, subtotal').gte('created_at', inicioHoy),
       supabase.from('eventos').select('clientes(nombre), fecha_evento, estado, total').order('fecha_evento', { ascending: false }).limit(10),
-    ]).then(([movimientos, ordenes, cabanas, eventos, hospedajes, detalles, eventosData]) => {
+    ]).then(([movimientos, ordenes, cabanas, eventos, hospedajes, eventosData]) => {
       const ingHoy = (movimientos.data ?? []).reduce((s: number, m: any) => s + m.monto, 0)
       setStats({
         ingresosDia: ingHoy,
@@ -78,12 +77,13 @@ export default function ReportesPage() {
         eventosActivos: (eventos.data ?? []).length,
       })
 
-      const agrupados: Record<string, number> = {}
-      ;(detalles.data ?? []).forEach((d: any) => {
-        agrupados[d.nombre_producto] = (agrupados[d.nombre_producto] ?? 0) + d.subtotal
-      })
-      setVentasRest(
-        Object.entries(agrupados).sort(([, a], [, b]) => b - a).slice(0, 10).map(([nombre, total]) => ({ nombre, total }))
+      setOrdenesHoy(
+        (ordenes.data ?? []).map((o: any) => ({
+          numero: o.numero_orden,
+          mesa:   o.mesa ?? '—',
+          total:  o.total,
+          hora:   new Date(o.created_at).toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' }),
+        }))
       )
 
       setHospedajes(
@@ -196,22 +196,31 @@ export default function ReportesPage() {
           {/* ── Restaurante ─────────────────────────────────────────────────── */}
           {tab === 'restaurante' && (
             <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5">
-              <h3 className="font-bold text-slate-300 mb-4 flex items-center gap-2">
-                <Trophy className="h-4 w-4 text-amber-400" />
-                Top Productos del Día
-              </h3>
-              {ventasRestaurante.length === 0 ? (
-                <p className="text-slate-500 text-center py-8 text-sm">Sin ventas hoy</p>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-slate-300 flex items-center gap-2">
+                  <Utensils className="h-4 w-4 text-amber-400" />
+                  Órdenes del Día
+                </h3>
+                {ordenesHoy.length > 0 && (
+                  <span className="text-xs text-slate-500 font-semibold">
+                    Total: <span className="text-amber-400 font-black">
+                      {formatCurrency(ordenesHoy.reduce((s, o) => s + o.total, 0))}
+                    </span>
+                  </span>
+                )}
+              </div>
+              {ordenesHoy.length === 0 ? (
+                <p className="text-slate-500 text-center py-8 text-sm">Sin órdenes hoy</p>
               ) : (
-                <div className="space-y-2">
-                  {ventasRestaurante.map((p, i) => (
-                    <div key={p.nombre} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 transition-colors">
-                      <span className={cn(
-                        'w-6 h-6 rounded-lg text-xs font-black flex items-center justify-center flex-shrink-0',
-                        i === 0 ? 'bg-amber-500 text-white' : i === 1 ? 'bg-slate-600 text-white' : i === 2 ? 'bg-orange-700 text-white' : 'bg-slate-800 text-slate-400'
-                      )}>{i + 1}</span>
-                      <span className="flex-1 text-sm font-semibold text-slate-300 truncate">{p.nombre}</span>
-                      <span className="font-black text-amber-400">{formatCurrency(p.total)}</span>
+                <div className="space-y-1.5">
+                  {ordenesHoy.map(o => (
+                    <div key={o.numero} className="flex items-center gap-3 p-3 rounded-xl bg-slate-800">
+                      <span className="text-xs font-black text-slate-500 w-8 flex-shrink-0">#{o.numero}</span>
+                      <span className="flex-1 text-sm font-semibold text-slate-300">
+                        {o.mesa !== '—' ? `Mesa ${o.mesa}` : 'Sin mesa'}
+                      </span>
+                      <span className="text-xs text-slate-500 flex-shrink-0">{o.hora}</span>
+                      <span className="font-black text-amber-400 flex-shrink-0">{formatCurrency(o.total)}</span>
                     </div>
                   ))}
                 </div>
@@ -285,7 +294,7 @@ export default function ReportesPage() {
               ) : (
                 cierres.map(c => {
                   const isOpen = expandedCierre === c.id
-                  const fecha = new Date(c.fecha + 'T12:00:00').toLocaleDateString('es-GT', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
+                  const fecha = new Date(c.fecha + 'T12:00:00').toLocaleDateString('es-GT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
                   const hora  = new Date(c.created_at).toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' })
                   return (
                     <div key={c.id} className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">

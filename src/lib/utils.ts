@@ -10,7 +10,11 @@ export function formatCurrency(amount: number): string {
 }
 
 export function formatDate(date: string | Date): string {
-  const d = typeof date === 'string' ? new Date(date) : date
+  // Bare date strings ("2026-06-12") are UTC midnight — parse as local noon
+  // to avoid off-by-one in UTC-6 timezone
+  const d = typeof date === 'string'
+    ? new Date(/^\d{4}-\d{2}-\d{2}$/.test(date) ? date + 'T12:00:00' : date)
+    : date
   return d.toLocaleDateString('es-GT', {
     day: '2-digit',
     month: '2-digit',
@@ -19,7 +23,9 @@ export function formatDate(date: string | Date): string {
 }
 
 export function formatDateTime(date: string | Date): string {
-  const d = typeof date === 'string' ? new Date(date) : date
+  const d = typeof date === 'string'
+    ? new Date(/^\d{4}-\d{2}-\d{2}$/.test(date) ? date + 'T12:00:00' : date)
+    : date
   return d.toLocaleString('es-GT', {
     day: '2-digit',
     month: '2-digit',
