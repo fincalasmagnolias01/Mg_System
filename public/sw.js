@@ -1,70 +1,77 @@
-const CACHE = 'systemmg-v1'
-const SHELL = ['/', '/login']
+// systemmg-v2 — limpia el cache anterior que tenia respuestas rotas
+const CACHE = 'systemmg-v2'
 
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE)
-      .then(c => c.addAll(SHELL))
-      .then(() => self.skipWaiting())
-  )
+self.addEventListener('install', () => {
+  // Toma control inmediatamente sin esperar que cierren las pestanas
+  self.skipWaiting()
 })
 
-self.addEventListener('activate', e => {
-  e.waitUntil(
+self.addEventListener('activate', event => {
+  event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(keys =>
+        // Borra TODOS los caches anteriores (v1 y cualquier otro)
+        Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      )
       .then(() => self.clients.claim())
   )
 })
 
-// Only cache clean 200 responses — never opaque, redirects, or errors
-function tryCache(request, response) {
-  if (!response || response.status !== 200 || response.type === 'opaque') return
-  // Clone SYNCHRONOUSLY before any async gap — prevents "body already used"
-  const clone = response.clone()
-  caches.open(CACHE).then(c => c.put(request, clone)).catch(() => {})
-}
-
-self.addEventListener('fetch', e => {
-  const { request } = e
+self.addEventListener('fetch', event => {
+  const { request } = event
   const url = new URL(request.url)
 
-  // Only intercept same-origin GETs
-  if (request.method !== 'GET') return
-  if (url.hostname !== location.hostname) return
+  // Solo interceptar GET del mismo origen
+  if (request.method !== 'GET' || url.origin !== location.origin) return
 
-  // Let Next.js data fetches and API calls pass through untouched
-  if (
-    url.pathname.startsWith('/_next/data/') ||
-    url.pathname.startsWith('/api/')
-  ) return
+  // Pasar sin tocar: rutas de datos y API
+  if (url.pathname.startsWith('/_next/data/') || url.pathname.startsWith('/api/')) return
 
-  // ── Cache-first: Next.js hashed static assets ──────────────────────────
+  // ── Assets estaticos de Next.js (_next/static/) ─────────────────────────
+  // Son inmutables (nombre incluye hash), seguro hacer cache-first
   if (url.pathname.startsWith('/_next/static/')) {
-    e.respondWith(
-      caches.match(request).then(cached => {
-        if (cached) return cached
+    event.respondWith(
+      caches.match(request).then(hit => {
+        if (hit) return hit
         return fetch(request).then(res => {
-          tryCache(request, res)   // clone happens inside, synchronously
+          if (res && res.ok) {
+            const copy = res.clone()           // clone SINCRONICO antes de async
+            caches.open(CACHE)
+              .then(c => c.put(request, copy))
+              .catch(() => {})
+          }
           return res
-        })
+        }).catch(() => new Response('', { status: 503 }))
       })
     )
     return
   }
 
-  // ── Network-first: HTML navigation ─────────────────────────────────────
+  // ── Paginas HTML (navegacion) ────────────────────────────────────────────
+  // Network-first: si la red falla, servir desde cache
   if (request.mode === 'navigate') {
-    e.respondWith(
+    event.respondWith(
       fetch(request)
         .then(res => {
-          tryCache(request, res)   // clone happens inside, synchronously
+          if (res && res.ok) {
+            const copy = res.clone()           // clone SINCRONICO antes de async
+            caches.open(CACHE)
+              .then(c => c.put(request, copy))
+              .catch(() => {})
+          }
           return res
         })
-        .catch(() =>
-          caches.match(request).then(r => r || caches.match('/'))
-        )
+        .catch(async () => {
+          // Red no disponible: intentar desde cache, luego raiz, luego error
+          const fromCache = await caches.match(request).catch(() => null)
+          if (fromCache) return fromCache
+          const root = await caches.match('/').catch(() => null)
+          if (root) return root
+          return new Response('Sin conexión', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+          })
+        })
     )
-    return
   }
 })
