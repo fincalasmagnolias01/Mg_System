@@ -38,8 +38,31 @@ export default function ReservaModal({ cabana, open, onBack, onDone }: ReservaMo
       toast.error('Completa los campos obligatorios')
       return
     }
+    if (fechaSalida <= fechaEntrada) {
+      toast.error('La fecha de salida debe ser posterior a la entrada')
+      return
+    }
     setLoading(true)
     const supabase = createClient()
+
+    const entrada = new Date(`${fechaEntrada}T14:00:00`)
+    const salida = new Date(`${fechaSalida}T12:00:00`)
+
+    // Verificar conflicto de fechas con reservas existentes
+    const { data: conflictos } = await supabase
+      .from('reservas')
+      .select('id, clientes(nombre), fecha_entrada, fecha_salida')
+      .eq('cabana_id', cabana.id)
+      .in('estado', ['pendiente', 'confirmada'])
+      .lt('fecha_entrada', salida.toISOString())
+      .gt('fecha_salida', entrada.toISOString())
+
+    if (conflictos && conflictos.length > 0) {
+      const c = conflictos[0] as { clientes?: { nombre: string }; fecha_entrada: string }
+      toast.error(`Ya existe una reserva en esas fechas (${c.clientes?.nombre ?? 'cliente'} desde ${new Date(c.fecha_entrada).toLocaleDateString('es-GT')})`)
+      setLoading(false)
+      return
+    }
 
     const { data: cliente } = await supabase
       .from('clientes')
@@ -48,9 +71,6 @@ export default function ReservaModal({ cabana, open, onBack, onDone }: ReservaMo
       .single()
 
     if (!cliente) { toast.error('Error al registrar cliente'); setLoading(false); return }
-
-    const entrada = new Date(`${fechaEntrada}T14:00:00`)
-    const salida = new Date(`${fechaSalida}T12:00:00`)
 
     const { error } = await supabase.from('reservas').insert({
       cabana_id: cabana.id,

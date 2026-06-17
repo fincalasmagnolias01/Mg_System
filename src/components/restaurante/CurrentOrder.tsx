@@ -1,18 +1,21 @@
 'use client'
 
+import { useState } from 'react'
 import { ItemOrden } from '@/types'
-import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { formatCurrency } from '@/lib/utils'
-import { Trash2, Plus, Minus, ShoppingCart, Percent, Star } from 'lucide-react'
+import { formatCurrency, cn } from '@/lib/utils'
+import { Trash2, Plus, Minus, ShoppingCart, Percent, Star, MessageSquare, Check } from 'lucide-react'
 
 interface CurrentOrderProps {
   items: ItemOrden[]
   mesa: string
   descuento: number
   propina: number
+  onMesaChange: (mesa: string) => void
   onQtyChange: (tempId: string, qty: number) => void
+  onNotaChange: (tempId: string, nota: string) => void
   onRemove: (tempId: string) => void
   onDescuento: () => void
   onPropina: () => void
@@ -23,8 +26,8 @@ interface CurrentOrderProps {
 
 export default function CurrentOrder({
   items, mesa, descuento, propina,
-  onQtyChange, onRemove, onDescuento, onPropina,
-  onPagar, onCerrar, loading
+  onMesaChange, onQtyChange, onNotaChange, onRemove,
+  onDescuento, onPropina, onPagar, onCerrar, loading
 }: CurrentOrderProps) {
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0)
   const total = subtotal - descuento + propina
@@ -32,13 +35,21 @@ export default function CurrentOrder({
   return (
     <aside className="w-80 bg-white border-l flex flex-col h-full flex-shrink-0">
       {/* Header */}
-      <div className="p-4 border-b bg-slate-50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5 text-slate-700" />
-            <h3 className="font-black text-slate-800">Cuenta Actual</h3>
-          </div>
-          {mesa && <span className="text-xs font-bold bg-slate-100 text-slate-700 px-2 py-1 rounded-lg">Mesa {mesa}</span>}
+      <div className="p-3 border-b bg-slate-50 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <ShoppingCart className="h-4 w-4 text-slate-500 flex-shrink-0" />
+          <span className="text-sm font-black text-slate-700 flex-shrink-0">Mesa</span>
+          <Input
+            value={mesa}
+            onChange={e => onMesaChange(e.target.value)}
+            placeholder="# mesa"
+            className="h-8 rounded-lg text-sm font-bold text-center border-slate-200 bg-white flex-1"
+          />
+          {items.length > 0 && (
+            <span className="text-xs font-bold bg-slate-900 text-white px-2 py-1 rounded-lg flex-shrink-0">
+              {items.reduce((n, i) => n + i.cantidad, 0)} items
+            </span>
+          )}
         </div>
       </div>
 
@@ -46,48 +57,19 @@ export default function CurrentOrder({
       <ScrollArea className="flex-1">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-slate-300">
-            <ShoppingCart className="h-12 w-12 mb-2" />
+            <ShoppingCart className="h-12 w-12 mb-2" strokeWidth={1} />
             <p className="text-sm">Orden vacía</p>
           </div>
         ) : (
-          <div className="p-3 space-y-2">
+          <div className="p-2 space-y-1.5">
             {items.map(item => (
-              <div key={item.tempId} className="flex items-start gap-2 p-2 rounded-xl hover:bg-slate-50 group">
-                {/* Qty controls */}
-                <div className="flex items-center gap-1 mt-0.5">
-                  <button
-                    onClick={() => onQtyChange(item.tempId, item.cantidad - 1)}
-                    className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-600 transition-colors"
-                  >
-                    <Minus className="h-3 w-3" />
-                  </button>
-                  <span className="w-6 text-center font-bold text-sm">{item.cantidad}</span>
-                  <button
-                    onClick={() => onQtyChange(item.tempId, item.cantidad + 1)}
-                    className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-600 transition-colors"
-                  >
-                    <Plus className="h-3 w-3" />
-                  </button>
-                </div>
-
-                {/* Name & price */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 leading-tight truncate">{item.nombre_producto}</p>
-                  {item.notas && <p className="text-xs text-slate-400 italic">{item.notas}</p>}
-                  <p className="text-xs text-slate-500">{formatCurrency(item.precio_unitario)} c/u</p>
-                </div>
-
-                {/* Subtotal & delete */}
-                <div className="flex flex-col items-end gap-1">
-                  <span className="text-sm font-bold text-slate-800">{formatCurrency(item.subtotal)}</span>
-                  <button
-                    onClick={() => onRemove(item.tempId)}
-                    className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+              <ItemRow
+                key={item.tempId}
+                item={item}
+                onQtyChange={onQtyChange}
+                onRemove={onRemove}
+                onNotaChange={onNotaChange}
+              />
             ))}
           </div>
         )}
@@ -96,15 +78,15 @@ export default function CurrentOrder({
       <Separator />
 
       {/* Totals */}
-      <div className="p-4 space-y-1.5">
+      <div className="px-4 py-3 space-y-1 flex-shrink-0">
         <div className="flex justify-between text-sm text-slate-600">
           <span>Subtotal</span>
           <span>{formatCurrency(subtotal)}</span>
         </div>
         {descuento > 0 && (
-          <div className="flex justify-between text-sm text-green-600">
+          <div className="flex justify-between text-sm text-emerald-600 font-medium">
             <span>Descuento</span>
-            <span>-{formatCurrency(descuento)}</span>
+            <span>− {formatCurrency(descuento)}</span>
           </div>
         )}
         {propina > 0 && (
@@ -122,49 +104,134 @@ export default function CurrentOrder({
       <Separator />
 
       {/* Action buttons */}
-      <div className="p-3 space-y-2">
+      <div className="p-3 space-y-2 flex-shrink-0">
         <div className="grid grid-cols-2 gap-2">
-          <Button
-            variant="outline"
-            size="default"
-            className="rounded-xl text-xs gap-1.5"
+          <button
             onClick={onDescuento}
             disabled={items.length === 0}
+            className="h-12 rounded-xl border-2 border-slate-200 flex items-center justify-center gap-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 active:scale-[0.97] transition-all disabled:opacity-30"
           >
-            <Percent className="h-3.5 w-3.5" />
+            <Percent className="h-4 w-4" />
             Descuento
-          </Button>
-          <Button
-            variant="outline"
-            size="default"
-            className="rounded-xl text-xs gap-1.5"
+          </button>
+          <button
             onClick={onPropina}
             disabled={items.length === 0}
+            className={cn(
+              'h-12 rounded-xl border-2 flex items-center justify-center gap-1.5 text-sm font-semibold transition-all active:scale-[0.97] disabled:opacity-30',
+              propina > 0
+                ? 'border-amber-400 bg-amber-50 text-amber-700'
+                : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+            )}
           >
-            <Star className="h-3.5 w-3.5" />
+            <Star className="h-4 w-4" />
             Propina
-          </Button>
+          </button>
         </div>
 
-        <Button
-          size="xl"
-          className="w-full rounded-xl text-base font-black bg-slate-800 hover:bg-slate-700"
+        <button
           onClick={onPagar}
           disabled={items.length === 0 || loading}
+          className="w-full h-14 rounded-xl text-base font-black bg-slate-900 hover:bg-slate-800 text-white active:scale-[0.98] transition-all disabled:opacity-30"
         >
           Cobrar · {formatCurrency(total)}
-        </Button>
+        </button>
 
-        <Button
-          variant="ghost"
-          size="default"
-          className="w-full rounded-xl text-xs text-slate-400"
+        <button
           onClick={onCerrar}
           disabled={items.length === 0}
+          className="w-full h-10 rounded-xl text-xs text-slate-400 hover:text-slate-600 hover:bg-slate-50 active:scale-[0.97] transition-all disabled:opacity-30"
         >
-          Cerrar / Nueva Orden
-        </Button>
+          Cancelar / Nueva Orden
+        </button>
       </div>
     </aside>
+  )
+}
+
+/* ── Item row with nota editing ──────────────────────────── */
+
+function ItemRow({ item, onQtyChange, onRemove, onNotaChange }: {
+  item: ItemOrden
+  onQtyChange: (tempId: string, qty: number) => void
+  onRemove: (tempId: string) => void
+  onNotaChange: (tempId: string, nota: string) => void
+}) {
+  const [editingNota, setEditingNota] = useState(false)
+  const [notaDraft, setNotaDraft] = useState(item.notas ?? '')
+
+  function commitNota() {
+    onNotaChange(item.tempId, notaDraft.trim())
+    setEditingNota(false)
+  }
+
+  return (
+    <div className="bg-slate-50 rounded-xl p-2.5 space-y-2">
+      <div className="flex items-start gap-2">
+        {/* Qty controls — touch-friendly */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={() => onQtyChange(item.tempId, item.cantidad - 1)}
+            className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-600 active:scale-[0.93] transition-all"
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </button>
+          <span className="w-8 text-center font-black text-base">{item.cantidad}</span>
+          <button
+            onClick={() => onQtyChange(item.tempId, item.cantidad + 1)}
+            className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-600 active:scale-[0.93] transition-all"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        {/* Name & price */}
+        <div className="flex-1 min-w-0 pt-1">
+          <p className="text-sm font-semibold text-slate-800 leading-tight truncate">{item.nombre_producto}</p>
+          <p className="text-xs text-slate-400">{formatCurrency(item.precio_unitario)} c/u</p>
+        </div>
+
+        {/* Subtotal & delete */}
+        <div className="flex flex-col items-end gap-1 flex-shrink-0 pt-1">
+          <span className="text-sm font-black text-slate-900">{formatCurrency(item.subtotal)}</span>
+          <button
+            onClick={() => onRemove(item.tempId)}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 active:scale-[0.93] transition-all"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Nota inline */}
+      {editingNota ? (
+        <div className="flex items-center gap-1.5">
+          <Input
+            value={notaDraft}
+            onChange={e => setNotaDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') commitNota() }}
+            placeholder="ej: sin cebolla, bien cocido..."
+            className="h-8 text-xs rounded-lg flex-1"
+            autoFocus
+          />
+          <button
+            onClick={commitNota}
+            className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center flex-shrink-0 active:scale-[0.93] transition-all"
+          >
+            <Check className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => { setNotaDraft(item.notas ?? ''); setEditingNota(true) }}
+          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors w-full text-left"
+        >
+          <MessageSquare className="h-3 w-3 flex-shrink-0" />
+          <span className={item.notas ? 'text-slate-600 font-medium italic' : ''}>
+            {item.notas || 'Agregar nota...'}
+          </span>
+        </button>
+      )}
+    </div>
   )
 }

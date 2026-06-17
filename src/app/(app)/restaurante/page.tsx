@@ -5,37 +5,84 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Categoria, Producto, ItemOrden } from '@/types'
 import CategorySidebar from '@/components/restaurante/CategorySidebar'
-import ProductGrid, { VariantModal } from '@/components/restaurante/ProductGrid'
+import ProductGrid from '@/components/restaurante/ProductGrid'
+import VariantModal from '@/components/restaurante/VariantModal'
 import CurrentOrder from '@/components/restaurante/CurrentOrder'
 import PaymentModal from '@/components/restaurante/PaymentModal'
 import DiscountModal from '@/components/restaurante/DiscountModal'
-import { Input } from '@/components/ui/input'
-import { House, Settings } from 'lucide-react'
-import { generateId } from '@/lib/utils'
+import { House, Settings, Plus } from 'lucide-react'
+import { generateId, cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import ProductoAdminModal from '@/components/restaurante/ProductoAdminModal'
 
 const CATEGORIAS_PERMITIDAS = ['bebidas', 'alcohol', 'desayuno', 'plato', 'postre']
 
+type TabOrden = {
+  id: string
+  mesa: string
+  items: ItemOrden[]
+  descuento: number
+  propina: number
+  ordenId: string | null
+}
+
+type RestauranteState = {
+  tabs: TabOrden[]
+  activeId: string
+}
+
+function createTab(mesa = ''): TabOrden {
+  return { id: generateId(), mesa, items: [], descuento: 0, propina: 0, ordenId: null }
+}
+
 export default function RestaurantePage() {
   const router = useRouter()
+  const [rs, setRs] = useState<RestauranteState>(() => {
+    const tab = createTab()
+    return { tabs: [tab], activeId: tab.id }
+  })
+
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [productos, setProductos] = useState<Producto[]>([])
   const [catSelected, setCatSelected] = useState<string | null>(null)
-  const [items, setItems] = useState<ItemOrden[]>([])
-  const [mesa, setMesa] = useState('')
-  const [descuento, setDescuento] = useState(0)
-  const [propina, setPropina] = useState(0)
   const [variantProd, setVariantProd] = useState<Producto | null>(null)
   const [showPayment, setShowPayment] = useState(false)
   const [showDiscount, setShowDiscount] = useState(false)
-  const [ordenId, setOrdenId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [showAdmin, setShowAdmin] = useState(false)
 
-  const subtotal = items.reduce((s, i) => s + i.subtotal, 0)
-  const total = subtotal - descuento + propina
+  const activeTab = rs.tabs.find(t => t.id === rs.activeId) ?? rs.tabs[0]
+  const subtotal = activeTab.items.reduce((s, i) => s + i.subtotal, 0)
+  const total = subtotal - activeTab.descuento + activeTab.propina
 
+  // ── Tab helpers ──────────────────────────────────────────────────
+  function updateTab(update: Partial<Omit<TabOrden, 'id'>>) {
+    setRs(prev => ({
+      ...prev,
+      tabs: prev.tabs.map(t => t.id === prev.activeId ? { ...t, ...update } : t),
+    }))
+  }
+
+  function addTab() {
+    const tab = createTab()
+    setRs(prev => ({ tabs: [...prev.tabs, tab], activeId: tab.id }))
+  }
+
+  function closeTab(id: string) {
+    setRs(prev => {
+      const newTabs = prev.tabs.filter(t => t.id !== id)
+      if (newTabs.length === 0) {
+        const tab = createTab()
+        return { tabs: [tab], activeId: tab.id }
+      }
+      const newActiveId = prev.activeId === id
+        ? newTabs[newTabs.length - 1].id
+        : prev.activeId
+      return { tabs: newTabs, activeId: newActiveId }
+    })
+  }
+
+  // ── Products ─────────────────────────────────────────────────────
   useEffect(() => {
     const supabase = createClient()
     supabase.from('categorias').select('*').eq('modulo', 'restaurante').eq('activo', true).order('orden')
@@ -58,68 +105,78 @@ export default function RestaurantePage() {
       .then(({ data }) => { if (data) setProductos(data) })
   }, [catSelected])
 
+  // ── Order actions ─────────────────────────────────────────────────
   function handleSelectProduct(p: Producto) {
     if (p.tiene_variantes) {
       setVariantProd(p)
     } else {
-      addItem({
-        tempId: generateId(),
-        producto_id: p.id,
-        nombre_producto: p.nombre,
-        cantidad: 1,
-        precio_unitario: p.precio,
-        subtotal: p.precio,
-      })
+      addItem({ tempId: generateId(), producto_id: p.id, nombre_producto: p.nombre, cantidad: 1, precio_unitario: p.precio, subtotal: p.precio })
     }
   }
 
   function addItem(item: ItemOrden) {
-    setItems(prev => {
-      const existing = prev.find(i =>
-        i.producto_id === item.producto_id &&
-        JSON.stringify(i.variante) === JSON.stringify(item.variante)
+    setRs(prev => {
+      const tab = prev.tabs.find(t => t.id === prev.activeId)!
+      const existing = tab.items.find(i =>
+        i.producto_id === item.producto_id && !item.variante && !i.variante
       )
-      if (existing && !item.variante) {
-        return prev.map(i =>
-          i.tempId === existing.tempId
+      const newItems = existing
+        ? tab.items.map(i => i.tempId === existing.tempId
             ? { ...i, cantidad: i.cantidad + 1, subtotal: (i.cantidad + 1) * i.precio_unitario }
-            : i
-        )
-      }
-      return [...prev, item]
+            : i)
+        : [...tab.items, item]
+      return { ...prev, tabs: prev.tabs.map(t => t.id === prev.activeId ? { ...t, items: newItems } : t) }
     })
   }
 
   function handleQtyChange(tempId: string, qty: number) {
-    if (qty <= 0) {
-      setItems(prev => prev.filter(i => i.tempId !== tempId))
-    } else {
-      setItems(prev => prev.map(i =>
-        i.tempId === tempId ? { ...i, cantidad: qty, subtotal: qty * i.precio_unitario } : i
-      ))
-    }
+    setRs(prev => ({
+      ...prev,
+      tabs: prev.tabs.map(t => t.id !== prev.activeId ? t : {
+        ...t,
+        items: qty <= 0
+          ? t.items.filter(i => i.tempId !== tempId)
+          : t.items.map(i => i.tempId === tempId ? { ...i, cantidad: qty, subtotal: qty * i.precio_unitario } : i),
+      }),
+    }))
+  }
+
+  function handleNotaChange(tempId: string, notas: string) {
+    setRs(prev => ({
+      ...prev,
+      tabs: prev.tabs.map(t => t.id !== prev.activeId ? t : {
+        ...t,
+        items: t.items.map(i => i.tempId === tempId ? { ...i, notas } : i),
+      }),
+    }))
   }
 
   function handlePropina() {
-    setPropina(prev => prev > 0 ? 0 : Math.round(subtotal * 0.1 * 100) / 100)
+    const newPropina = activeTab.propina > 0 ? 0 : Math.round(subtotal * 0.1 * 100) / 100
+    updateTab({ propina: newPropina })
   }
 
-  async function handlePagar(forma: 'efectivo' | 'tarjeta' | 'transferencia' | 'mixto', detalle: Record<string, number>, cambio: number) {
+  async function handlePagar(
+    forma: 'efectivo' | 'tarjeta' | 'transferencia' | 'mixto',
+    detalle: Record<string, number>,
+    cambio: number,
+    nit: string,
+    nombreFactura: string,
+  ) {
     setLoading(true)
     const supabase = createClient()
+    const tab = activeTab
 
-    let oid = ordenId
+    let oid = tab.ordenId
     if (!oid) {
       const { data: orden } = await supabase
         .from('ordenes')
-        .insert({ mesa, subtotal, descuento, propina, total, estado: 'pagada' })
+        .insert({ mesa: tab.mesa, subtotal, descuento: tab.descuento, propina: tab.propina, total, estado: 'pagada' })
         .select('id').single()
-
       if (!orden) { toast.error('Error al crear orden'); setLoading(false); return }
       oid = orden.id
-
       await supabase.from('detalle_orden').insert(
-        items.map(i => ({
+        tab.items.map(i => ({
           orden_id: oid,
           producto_id: i.producto_id,
           nombre_producto: i.nombre_producto,
@@ -127,76 +184,108 @@ export default function RestaurantePage() {
           precio_unitario: i.precio_unitario,
           subtotal: i.subtotal,
           variante: i.variante ?? {},
+          notas: i.notas ?? '',
           enviado_cocina: false,
         }))
       )
     } else {
-      await supabase.from('ordenes').update({ estado: 'pagada', subtotal, descuento, propina, total }).eq('id', oid)
+      await supabase.from('ordenes').update({ estado: 'pagada', subtotal, descuento: tab.descuento, propina: tab.propina, total }).eq('id', oid)
     }
 
     const { data: factura } = await supabase.from('facturas').insert({
       tipo: 'restaurante',
       referencia_id: oid,
-      nit: 'CF',
-      nombre_factura: 'Consumidor Final',
+      nit,
+      nombre_factura: nombreFactura,
       subtotal,
-      descuento,
+      descuento: tab.descuento,
       total,
     }).select('id').single()
 
     if (factura) {
-      await supabase.from('pagos').insert({
-        factura_id: factura.id,
-        forma_pago: forma,
-        detalle_pago: detalle,
-        monto: total,
-        cambio,
-      })
-
+      await supabase.from('pagos').insert({ factura_id: factura.id, forma_pago: forma, detalle_pago: detalle, monto: total, cambio })
       await supabase.from('movimientos_caja').insert({
         tipo: 'ingreso',
-        concepto: `Venta Restaurante ${mesa ? `Mesa ${mesa}` : ''} · Orden`,
+        concepto: `Venta Restaurante${tab.mesa ? ` Mesa ${tab.mesa}` : ''}`,
         monto: total,
         referencia_id: factura.id,
         referencia_tipo: 'factura',
       })
     }
 
-    toast.success(`Pago registrado · Total: Q${total.toFixed(2)}`)
-    resetOrder()
+    toast.success(`Cobrado · Q${total.toFixed(2)}`)
+    setShowPayment(false)
+    closeTab(rs.activeId)
     setLoading(false)
   }
 
   function resetOrder() {
-    setItems([]); setOrdenId(null); setMesa(''); setDescuento(0); setPropina(0)
+    closeTab(rs.activeId)
     setShowPayment(false)
   }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="bg-slate-900 text-white px-4 py-3 flex items-center gap-4 flex-shrink-0">
-        <button onClick={() => router.push('/')} className="w-11 h-11 rounded-xl hover:bg-slate-700 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0">
+      <header className="bg-slate-900 text-white px-4 h-14 flex items-center gap-3 flex-shrink-0">
+        <button
+          onClick={() => router.push('/')}
+          className="w-11 h-11 rounded-xl hover:bg-slate-700 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0"
+        >
           <House className="h-5 w-5 text-slate-300" />
         </button>
-        <span className="text-base font-black">Restaurante</span>
-        <div className="flex items-center gap-3 ml-auto">
-          <span className="text-xs text-slate-400">Mesa:</span>
-          <Input
-            value={mesa}
-            onChange={e => setMesa(e.target.value)}
-            placeholder="1"
-            className="w-16 h-9 bg-slate-800 border-slate-700 text-white text-center rounded-xl font-bold"
-          />
-          <button
-            onClick={() => setShowAdmin(true)}
-            className="w-9 h-9 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all"
-            title="Gestionar productos"
-          >
-            <Settings className="h-4 w-4 text-slate-300" />
-          </button>
-        </div>
+        <span className="text-base font-black flex-shrink-0">Restaurante</span>
+        <div className="flex-1" />
+        <button
+          onClick={() => setShowAdmin(true)}
+          className="w-11 h-11 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all active:scale-[0.96]"
+          title="Gestionar productos"
+        >
+          <Settings className="h-4 w-4 text-slate-300" />
+        </button>
       </header>
+
+      {/* Tab bar — mesas activas */}
+      <div className="bg-slate-800 flex items-center gap-1 px-3 h-12 overflow-x-auto flex-shrink-0 border-b border-slate-700">
+        {rs.tabs.map(tab => {
+          const isActive = tab.id === rs.activeId
+          const itemCount = tab.items.reduce((n, i) => n + i.cantidad, 0)
+          return (
+            <div key={tab.id} className="flex items-center gap-1 flex-shrink-0">
+              <button
+                onClick={() => setRs(prev => ({ ...prev, activeId: tab.id }))}
+                className={cn(
+                  'h-8 px-4 rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.96]',
+                  isActive ? 'bg-white text-slate-900' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                )}
+              >
+                {tab.mesa ? `Mesa ${tab.mesa}` : 'Mesa'}
+                {itemCount > 0 && (
+                  <span className={cn(
+                    'h-5 min-w-5 px-1 rounded-full text-xs font-black flex items-center justify-center',
+                    isActive ? 'bg-slate-900 text-white' : 'bg-amber-500 text-white'
+                  )}>
+                    {itemCount}
+                  </span>
+                )}
+              </button>
+              {rs.tabs.length > 1 && itemCount === 0 && (
+                <button
+                  onClick={() => closeTab(tab.id)}
+                  className="w-5 h-5 rounded-full bg-slate-600 hover:bg-red-500 text-slate-300 hover:text-white text-xs flex items-center justify-center transition-all"
+                >×</button>
+              )}
+            </div>
+          )
+        })}
+        <button
+          onClick={addTab}
+          className="w-8 h-8 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0 ml-1"
+          title="Nueva mesa"
+        >
+          <Plus className="h-4 w-4 text-slate-300" />
+        </button>
+      </div>
 
       {/* POS 3-column layout */}
       <div className="flex-1 flex overflow-hidden">
@@ -205,21 +294,18 @@ export default function RestaurantePage() {
           selected={catSelected}
           onSelect={id => setCatSelected(id)}
         />
-
         <main className="flex-1 overflow-hidden">
-          <ProductGrid
-            productos={productos}
-            onSelect={handleSelectProduct}
-          />
+          <ProductGrid productos={productos} onSelect={handleSelectProduct} />
         </main>
-
         <CurrentOrder
-          items={items}
-          mesa={mesa}
-          descuento={descuento}
-          propina={propina}
+          items={activeTab.items}
+          mesa={activeTab.mesa}
+          descuento={activeTab.descuento}
+          propina={activeTab.propina}
+          onMesaChange={mesa => updateTab({ mesa })}
           onQtyChange={handleQtyChange}
-          onRemove={tempId => setItems(prev => prev.filter(i => i.tempId !== tempId))}
+          onNotaChange={handleNotaChange}
+          onRemove={tempId => handleQtyChange(tempId, 0)}
           onDescuento={() => setShowDiscount(true)}
           onPropina={handlePropina}
           onPagar={() => setShowPayment(true)}
@@ -241,6 +327,7 @@ export default function RestaurantePage() {
       <PaymentModal
         open={showPayment}
         total={total}
+        mesa={activeTab.mesa}
         onClose={() => setShowPayment(false)}
         onPagar={handlePagar}
       />
@@ -248,10 +335,10 @@ export default function RestaurantePage() {
       <DiscountModal
         open={showDiscount}
         subtotal={subtotal}
-        currentDescuento={descuento}
-        currentPropina={propina}
+        currentDescuento={activeTab.descuento}
+        currentPropina={activeTab.propina}
         onClose={() => setShowDiscount(false)}
-        onApply={(d, p) => { setDescuento(d); setPropina(p) }}
+        onApply={(d, p) => updateTab({ descuento: d, propina: p })}
       />
     </div>
   )

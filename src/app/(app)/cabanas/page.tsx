@@ -3,17 +3,19 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Cabana, EstadoCabana } from '@/types'
+import { Cabana, EstadoCabana, Reserva } from '@/types'
+import { formatDate } from '@/lib/utils'
 import CheckInModal from '@/components/cabanas/CheckInModal'
 import CheckOutModal from '@/components/cabanas/CheckOutModal'
 import ReservaModal from '@/components/cabanas/ReservaModal'
 import VapepassModal from '@/components/cabanas/VapepassModal'
 import CabanaAdminModal from '@/components/cabanas/CabanaAdminModal'
 import FacturaCabanaModal from '@/components/cabanas/FacturaCabanaModal'
+import ReservasPanel from '@/components/cabanas/ReservasPanel'
 import { Badge } from '@/components/ui/badge'
 import {
   House, LogIn, LogOut, Calendar,
-  Zap, Receipt, Settings, BedDouble, Loader2, Users,
+  Zap, Receipt, Settings, BedDouble, Users, BookOpen,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -51,6 +53,20 @@ export default function CabanasPage() {
   const [loading, setLoading] = useState(true)
   const [changingEstado, setChangingEstado] = useState(false)
   const [showAdmin, setShowAdmin] = useState(false)
+  const [showReservas, setShowReservas] = useState(false)
+  const [reservasProximas, setReservasProximas] = useState<Reserva[]>([])
+
+  const fetchReservasProximas = useCallback(async () => {
+    const supabase = createClient()
+    const hoy = new Date().toISOString().split('T')[0]
+    const { data } = await supabase
+      .from('reservas')
+      .select('*, clientes(nombre, telefono)')
+      .in('estado', ['confirmada', 'pendiente'])
+      .gte('fecha_entrada', hoy)
+      .order('fecha_entrada', { ascending: true })
+    if (data) setReservasProximas(data as Reserva[])
+  }, [])
 
   const fetchCabanas = useCallback(async () => {
     const supabase = createClient()
@@ -67,13 +83,15 @@ export default function CabanasPage() {
 
   useEffect(() => {
     fetchCabanas()
+    fetchReservasProximas()
     const supabase = createClient()
     const ch = supabase.channel('cab-rt')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cabanas' }, fetchCabanas)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'hospedajes' }, fetchCabanas)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reservas' }, fetchReservasProximas)
       .subscribe()
     return () => { supabase.removeChannel(ch) }
-  }, [fetchCabanas])
+  }, [fetchCabanas, fetchReservasProximas])
 
   useEffect(() => {
     if (selected) {
@@ -82,7 +100,10 @@ export default function CabanasPage() {
     }
   }, [cabanas]) // eslint-disable-line
 
-  function handleDone() { fetchCabanas(); setSubView(null) }
+  function handleDone() { fetchCabanas(); fetchReservasProximas(); setSubView(null) }
+
+  const hoy = new Date().toISOString().split('T')[0]
+  const llegasHoy = reservasProximas.filter(r => r.fecha_entrada.startsWith(hoy)).length
 
   async function handleCambiarEstado(estado: EstadoCabana) {
     if (!selected) return
@@ -122,6 +143,18 @@ export default function CabanasPage() {
           ))}
         </div>
         <button
+          onClick={() => setShowReservas(true)}
+          className="relative w-11 h-11 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0"
+          title="Ver reservaciones"
+        >
+          <BookOpen className="h-4 w-4 text-slate-300" />
+          {llegasHoy > 0 && (
+            <span className="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full bg-amber-500 text-white text-xs font-black flex items-center justify-center leading-none">
+              {llegasHoy}
+            </span>
+          )}
+        </button>
+        <button
           onClick={() => setShowAdmin(true)}
           className="w-9 h-9 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all flex-shrink-0"
           title="Configuración"
@@ -143,6 +176,10 @@ export default function CabanasPage() {
             cabanas.map(c => {
               const s = STATUS[c.estado]
               const isSelected = selected?.id === c.id
+              const proximaReserva = c.estado === 'reservada'
+                ? reservasProximas.find(r => r.cabana_id === c.id)
+                : null
+              const llegaHoyEsta = proximaReserva?.fecha_entrada.startsWith(hoy)
               return (
                 <button
                   key={c.id}
@@ -164,10 +201,20 @@ export default function CabanasPage() {
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <span className={cn('h-2 w-2 rounded-full flex-shrink-0', s.dot)} />
                       <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide leading-none">{s.label}</p>
+                      {llegaHoyEsta && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
+                      )}
                     </div>
                     <p className="text-sm font-bold text-slate-200 truncate">
-                      {c.hospedaje_activo?.clientes?.nombre ?? c.nombre}
+                      {c.hospedaje_activo?.clientes?.nombre
+                        ?? proximaReserva?.clientes?.nombre
+                        ?? c.nombre}
                     </p>
+                    {proximaReserva && !c.hospedaje_activo && (
+                      <p className="text-xs text-amber-400 truncate mt-0.5">
+                        {llegaHoyEsta ? 'Llega hoy' : formatDate(proximaReserva.fecha_entrada)}
+                      </p>
+                    )}
                   </div>
                 </button>
               )
@@ -299,6 +346,12 @@ export default function CabanasPage() {
         <FacturaCabanaModal cabana={selected} hospedaje={selected.hospedaje_activo} open onBack={() => setSubView(null)} onDone={handleDone} />
       )}
       <CabanaAdminModal open={showAdmin} onClose={() => setShowAdmin(false)} onSaved={fetchCabanas} />
+      {showReservas && (
+        <ReservasPanel
+          onClose={() => setShowReservas(false)}
+          onRefreshCabanas={() => { fetchCabanas(); fetchReservasProximas() }}
+        />
+      )}
     </div>
   )
 }
