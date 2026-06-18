@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createSupabaseServer } from '@/lib/supabase-server'
+import CajaBloqueadaOverlay from '@/components/shared/CajaBloqueadaOverlay'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createSupabaseServer()
@@ -7,5 +8,5 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
-  return <>{children}</>
+  return <CajaBloqueadaOverlay>{children}</CajaBloqueadaOverlay>
 }

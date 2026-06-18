@@ -58,7 +58,7 @@ export default function ReservaModal({ cabana, open, onBack, onDone }: ReservaMo
       .gt('fecha_salida', entrada.toISOString())
 
     if (conflictos && conflictos.length > 0) {
-      const c = conflictos[0] as { clientes?: { nombre: string }; fecha_entrada: string }
+      const c = conflictos[0] as unknown as { clientes?: { nombre: string }; fecha_entrada: string }
       toast.error(`Ya existe una reserva en esas fechas (${c.clientes?.nombre ?? 'cliente'} desde ${new Date(c.fecha_entrada).toLocaleDateString('es-GT')})`)
       setLoading(false)
       return

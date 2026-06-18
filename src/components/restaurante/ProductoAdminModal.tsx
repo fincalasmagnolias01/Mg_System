@@ -66,7 +66,8 @@ export default function ProductoAdminModal({ open, onClose }: ProductoAdminModal
     const stock = vals.stock !== '' ? parseInt(vals.stock) : null
     if (isNaN(precio)) { toast.error('Precio inválido'); return }
     setSaving(p.id)
-    await createClient().from('productos').update({ precio, ...(stock !== null ? { stock } : {}) }).eq('id', p.id)
+    const { error } = await createClient().from('productos').update({ precio, ...(stock !== null ? { stock } : {}) }).eq('id', p.id)
+    if (error) { toast.error(`Error al guardar: ${error.message}`); setSaving(false); return }
     toast.success(`${p.nombre} actualizado`)
     setSaving(false)
   }
@@ -104,7 +105,7 @@ export default function ProductoAdminModal({ open, onClose }: ProductoAdminModal
       categoria_id: catSelected,
       nombre: nuevo.nombre.trim(),
       precio,
-      stock: nuevo.stock !== '' ? parseInt(nuevo.stock) : null,
+      ...(nuevo.stock !== '' ? { stock: parseInt(nuevo.stock) } : {}),
       disponible: true,
       tiene_variantes: false,
       variantes: [],

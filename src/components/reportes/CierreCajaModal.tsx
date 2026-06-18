@@ -7,11 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Loader2, Utensils, BedDouble, CalendarDays, Lock, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { setCierreStorage } from '@/components/shared/CajaBloqueadaOverlay'
 
-interface ModuleTotal {
-  total: number
-  count: number
-}
+interface ModuleTotal { total: number; count: number }
 
 interface CierreData {
   restaurante: ModuleTotal
@@ -52,18 +50,12 @@ export default function CierreCajaModal({ open, onClose, onClosed }: CierreCajaM
       supabase.from('eventos').select('total').in('estado', ['completado', 'confirmado', 'en_curso']).gte('created_at', startOfDay),
     ])
 
-    const rest = { total: sum(ordenes.data, 'total'), count: ordenes.data?.length ?? 0 }
+    const rest = { total: sum(ordenes.data, 'total'),    count: ordenes.data?.length ?? 0 }
     const cab  = { total: sum(hospedajes.data, 'subtotal'), count: hospedajes.data?.length ?? 0 }
-    const dp   = { total: sum(vapepass.data, 'total'), count: vapepass.data?.length ?? 0 }
-    const ev   = { total: sum(eventos.data, 'total'), count: eventos.data?.length ?? 0 }
+    const dp   = { total: sum(vapepass.data, 'total'),   count: vapepass.data?.length ?? 0 }
+    const ev   = { total: sum(eventos.data, 'total'),    count: eventos.data?.length ?? 0 }
 
-    setData({
-      restaurante: rest,
-      cabanas: cab,
-      daypass: dp,
-      eventos: ev,
-      totalGeneral: rest.total + cab.total + dp.total + ev.total,
-    })
+    setData({ restaurante: rest, cabanas: cab, daypass: dp, eventos: ev, totalGeneral: rest.total + cab.total + dp.total + ev.total })
     setLoading(false)
   }
 
@@ -84,13 +76,11 @@ export default function CierreCajaModal({ open, onClose, onClosed }: CierreCajaM
       notas: notas.trim() || null,
     })
 
-    if (error) {
-      toast.error('Error al cerrar caja: ' + error.message)
-      setSaving(false)
-      return
-    }
+    if (error) { toast.error('Error al cerrar caja: ' + error.message); setSaving(false); return }
 
-    toast.success('Caja cerrada correctamente')
+    // Activate the global block overlay
+    setCierreStorage(data.totalGeneral)
+    toast.success('Caja cerrada. Sistema bloqueado.')
     setSaving(false)
     onClosed()
     onClose()
@@ -101,10 +91,10 @@ export default function CierreCajaModal({ open, onClose, onClosed }: CierreCajaM
   })
 
   const ROWS = data ? [
-    { icon: Utensils,     label: 'Restaurante', sublabel: `${data.restaurante.count} órdenes`,      color: 'text-amber-400',  bg: 'bg-amber-900/30',  total: data.restaurante.total },
-    { icon: BedDouble,    label: 'Cabañas',      sublabel: `${data.cabanas.count} hospedajes`,       color: 'text-teal-400',   bg: 'bg-teal-900/30',   total: data.cabanas.total     },
-    { icon: Zap,          label: 'Daypass',      sublabel: `${data.daypass.count} pases`,            color: 'text-amber-300',  bg: 'bg-amber-900/20',  total: data.daypass.total     },
-    { icon: CalendarDays, label: 'Eventos',      sublabel: `${data.eventos.count} eventos`,          color: 'text-violet-400', bg: 'bg-violet-900/30', total: data.eventos.total     },
+    { icon: Utensils,     label: 'Restaurante', sublabel: `${data.restaurante.count} órdenes`,   color: 'text-amber-400',  bg: 'bg-amber-900/30',  total: data.restaurante.total },
+    { icon: BedDouble,    label: 'Cabañas',     sublabel: `${data.cabanas.count} hospedajes`,     color: 'text-teal-400',   bg: 'bg-teal-900/30',   total: data.cabanas.total     },
+    { icon: Zap,          label: 'Daypass',     sublabel: `${data.daypass.count} pases`,          color: 'text-amber-300',  bg: 'bg-amber-900/20',  total: data.daypass.total     },
+    { icon: CalendarDays, label: 'Eventos',     sublabel: `${data.eventos.count} eventos`,        color: 'text-violet-400', bg: 'bg-violet-900/30', total: data.eventos.total     },
   ] : []
 
   return (
@@ -125,7 +115,6 @@ export default function CierreCajaModal({ open, onClose, onClosed }: CierreCajaM
             </div>
           ) : data ? (
             <div className="space-y-3">
-              {/* Module rows */}
               {ROWS.map(row => {
                 const Icon = row.icon
                 return (
@@ -144,13 +133,11 @@ export default function CierreCajaModal({ open, onClose, onClosed }: CierreCajaM
                 )
               })}
 
-              {/* Total general */}
               <div className="flex items-center justify-between bg-slate-700 rounded-xl p-4 border border-slate-600 mt-2">
                 <p className="font-bold text-slate-200 text-sm">Total del Día</p>
                 <p className="text-2xl font-black text-emerald-400">{formatCurrency(data.totalGeneral)}</p>
               </div>
 
-              {/* Notes */}
               <textarea
                 value={notas}
                 onChange={e => setNotas(e.target.value)}
@@ -159,7 +146,6 @@ export default function CierreCajaModal({ open, onClose, onClosed }: CierreCajaM
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 resize-none focus:outline-none focus:border-slate-500 transition-colors"
               />
 
-              {/* Actions */}
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={onClose}
@@ -184,7 +170,6 @@ export default function CierreCajaModal({ open, onClose, onClosed }: CierreCajaM
   )
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function sum(arr: any[] | null | undefined, key: string): number {
+function sum(arr: { [k: string]: unknown }[] | null | undefined, key: string): number {
   return (arr ?? []).reduce((s, row) => s + (Number(row[key]) || 0), 0)
 }
