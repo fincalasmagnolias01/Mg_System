@@ -123,43 +123,43 @@ export default function CabanasPage() {
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-slate-50">
       {/* Header */}
-      <header className="bg-slate-900 text-white px-5 h-16 flex items-center gap-4 flex-shrink-0">
+      <header className="bg-slate-900 text-white px-5 desk:px-8 h-16 desk:h-[72px] flex items-center gap-4 desk:gap-6 flex-shrink-0">
         <button
           onClick={() => router.push('/')}
-          className="w-11 h-11 rounded-xl hover:bg-slate-700 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0"
+          className="w-11 h-11 desk:w-14 desk:h-14 rounded-xl hover:bg-slate-700 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0"
         >
-          <House className="h-5 w-5 text-slate-300" />
+          <House className="h-5 w-5 desk:h-6 desk:w-6 text-slate-300" />
         </button>
-        <span className="text-base font-black flex-shrink-0">Cabañas</span>
+        <span className="text-base desk:text-xl font-black flex-shrink-0">Cabañas</span>
 
         {/* Stats centrados */}
-        <div className="flex-1 flex items-center justify-center gap-3">
+        <div className="flex-1 flex items-center justify-center gap-3 desk:gap-6">
           {stats.map(s => (
-            <div key={s.label} className="flex items-center gap-2 bg-slate-800 rounded-xl px-4 py-2">
-              <span className={cn('h-2 w-2 rounded-full flex-shrink-0', s.dot)} />
-              <span className="text-lg font-black text-white leading-none">{s.value}</span>
-              <span className="text-xs text-slate-400">{s.label}</span>
+            <div key={s.label} className="flex items-center gap-2 desk:gap-3 bg-slate-800 rounded-xl px-4 desk:px-6 py-2 desk:py-3">
+              <span className={cn('h-2 w-2 desk:h-3 desk:w-3 rounded-full flex-shrink-0', s.dot)} />
+              <span className="text-lg desk:text-2xl font-black text-white leading-none">{s.value}</span>
+              <span className="text-xs desk:text-sm text-slate-400">{s.label}</span>
             </div>
           ))}
         </div>
         <button
           onClick={() => setShowReservas(true)}
-          className="relative w-11 h-11 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0"
+          className="relative w-11 h-11 desk:w-14 desk:h-14 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0"
           title="Ver reservaciones"
         >
-          <BookOpen className="h-4 w-4 text-slate-300" />
+          <BookOpen className="h-4 w-4 desk:h-5 desk:w-5 text-slate-300" />
           {llegasHoy > 0 && (
-            <span className="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full bg-amber-500 text-white text-xs font-black flex items-center justify-center leading-none">
+            <span className="absolute -top-1 -right-1 h-5 desk:h-6 min-w-5 px-1 rounded-full bg-amber-500 text-white text-xs font-black flex items-center justify-center leading-none">
               {llegasHoy}
             </span>
           )}
         </button>
         <button
           onClick={() => setShowAdmin(true)}
-          className="w-9 h-9 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all flex-shrink-0"
+          className="w-9 h-9 desk:w-12 desk:h-12 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all flex-shrink-0"
           title="Configuración"
         >
-          <Settings className="h-4 w-4 text-slate-300" />
+          <Settings className="h-4 w-4 desk:h-5 desk:w-5 text-slate-300" />
         </button>
       </header>
 
@@ -167,7 +167,7 @@ export default function CabanasPage() {
       <div className="flex-1 flex overflow-hidden">
 
         {/* Left — cabin list */}
-        <aside className="w-64 bg-slate-900 flex-shrink-0 overflow-y-auto">
+        <aside className="w-64 desk:w-96 bg-slate-900 flex-shrink-0 overflow-y-auto">
           {loading ? (
             <div className="p-3 space-y-1.5">
               {Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-16 rounded-xl bg-slate-800 animate-pulse" />)}
@@ -190,7 +190,7 @@ export default function CabanasPage() {
                   )}
                 >
                   {/* Thumbnail or number */}
-                  <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-slate-700 flex items-center justify-center">
+                  <div className="w-14 h-14 desk:w-20 desk:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-slate-700 flex items-center justify-center">
                     {c.imagen_url ? (
                       <Image src={c.imagen_url} alt={c.nombre} width={56} height={56} className="w-full h-full object-cover" />
                     ) : (
@@ -205,7 +205,7 @@ export default function CabanasPage() {
                         <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
                       )}
                     </div>
-                    <p className="text-sm font-bold text-slate-200 truncate">
+                    <p className="text-sm desk:text-base font-bold text-slate-200 truncate">
                       {c.hospedaje_activo?.clientes?.nombre
                         ?? proximaReserva?.clientes?.nombre
                         ?? c.nombre}
@@ -258,7 +258,7 @@ export default function CabanasPage() {
             </div>
 
           ) : (
-            <div className="h-full p-5 flex flex-col gap-4 overflow-auto">
+            <div className="h-full p-5 desk:p-8 flex flex-col gap-4 desk:gap-6 overflow-auto">
               {/* Cabin info + image en la misma tarjeta */}
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-shrink-0">
                 {/* Info */}
@@ -266,7 +266,7 @@ export default function CabanasPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cabaña #{selected.numero}</p>
-                      <h2 className="text-xl font-black text-slate-900 mt-0.5">{selected.nombre}</h2>
+                      <h2 className="text-xl desk:text-3xl font-black text-slate-900 mt-0.5">{selected.nombre}</h2>
                     </div>
                     <Badge variant={STATUS[selected.estado].badge} className="text-xs px-2.5 py-1 flex-shrink-0">
                       {STATUS[selected.estado].label}
@@ -296,7 +296,7 @@ export default function CabanasPage() {
                 </div>
 
                 {/* Imagen — esquina derecha, tamaño fijo */}
-                <div className="relative w-40 flex-shrink-0 bg-slate-100">
+                <div className="relative w-40 desk:w-72 flex-shrink-0 bg-slate-100">
                   {selected.imagen_url ? (
                     <Image src={selected.imagen_url} alt={selected.nombre} fill className="object-cover" />
                   ) : (
@@ -308,7 +308,7 @@ export default function CabanasPage() {
               </div>
 
               {/* Actions */}
-              <div className="grid grid-cols-3 gap-2 flex-shrink-0">
+              <div className="grid grid-cols-3 gap-2 desk:gap-4 flex-shrink-0">
                 {ACTIONS.map(({ key, icon: Icon, label, colors }) => {
                   const disabled =
                     (key === 'checkin'  && selected.estado === 'ocupada') ||
@@ -316,9 +316,9 @@ export default function CabanasPage() {
                     (key === 'factura'  && !selected.hospedaje_activo)
                   return (
                     <button key={key} onClick={() => setSubView(key)} disabled={disabled}
-                      className={cn('h-20 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 font-semibold text-sm transition-all active:scale-[0.96] disabled:opacity-30 disabled:cursor-not-allowed', colors)}
+                      className={cn('h-20 desk:h-32 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 desk:gap-3 font-semibold text-sm desk:text-lg transition-all active:scale-[0.96] disabled:opacity-30 disabled:cursor-not-allowed', colors)}
                     >
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-5 w-5 desk:h-8 desk:w-8" />
                       {label}
                     </button>
                   )

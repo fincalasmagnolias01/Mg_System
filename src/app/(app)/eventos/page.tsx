@@ -12,8 +12,8 @@ import { Separator } from '@/components/ui/separator'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import {
   House, ArrowLeft, Plus, Users, Calendar, MapPin, Loader2, Trash2,
-  ChevronRight, CalendarDays, DollarSign, Edit2, Settings, Check, X,
-  Clock, AlertCircle, PackageSearch,
+  CalendarDays, DollarSign, Edit2, Settings, Check, X,
+  AlertCircle, PackageSearch,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -234,7 +234,7 @@ export default function EventosPage() {
       {/* Client & dates */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5">
         <h3 className="text-sm font-black text-slate-700 uppercase tracking-wide mb-4">Datos del Evento</h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 desk:grid-cols-3 gap-3 desk:gap-4">
           <div className="col-span-2 space-y-1">
             <Label className="text-xs text-slate-500">Nombre del cliente *</Label>
             <Input value={fNombre} onChange={e => setFNombre(e.target.value)} placeholder="Nombre completo" className="h-11" />
@@ -402,7 +402,7 @@ export default function EventosPage() {
               </button>
             </div>
           ) : (
-            <div className="space-y-2 max-w-3xl mx-auto">
+            <div className="space-y-2 max-w-3xl desk:max-w-6xl mx-auto">
               {eventos.map(evento => {
                 const cfg = ESTADO_CONFIG[evento.estado as EstadoEvento] ?? ESTADO_CONFIG.cotizacion
                 return (
@@ -492,7 +492,7 @@ export default function EventosPage() {
       {/* ── NUEVO / EDITAR ──────────────────────────────────── */}
       {(view === 'nuevo' || view === 'editar') && (
         <main className="flex-1 overflow-auto p-4">
-          <div className="max-w-2xl mx-auto pb-6">
+          <div className="max-w-2xl desk:max-w-4xl mx-auto pb-6">
             {FormContent}
             <div className="flex gap-3 mt-4">
               <button
@@ -635,7 +635,7 @@ function CatalogoView({ catalogo, onBack }: { catalogo: ServicioCatalogo[]; onBa
       </header>
 
       <main className="flex-1 overflow-auto p-4">
-        <div className="max-w-2xl mx-auto space-y-2">
+        <div className="max-w-2xl desk:max-w-4xl mx-auto space-y-2">
           {/* Add new */}
           {showNuevo && (
             <div className="bg-white rounded-2xl border-2 border-dashed border-slate-300 p-4 space-y-3">

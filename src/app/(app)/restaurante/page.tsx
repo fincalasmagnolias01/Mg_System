@@ -227,26 +227,26 @@ export default function RestaurantePage() {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="bg-slate-900 text-white px-4 h-14 flex items-center gap-3 flex-shrink-0">
+      <header className="bg-slate-900 text-white px-4 desk:px-6 h-14 desk:h-[72px] flex items-center gap-3 desk:gap-4 flex-shrink-0">
         <button
           onClick={() => router.push('/')}
-          className="w-11 h-11 rounded-xl hover:bg-slate-700 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0"
+          className="w-11 h-11 desk:w-14 desk:h-14 rounded-xl hover:bg-slate-700 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0"
         >
-          <House className="h-5 w-5 text-slate-300" />
+          <House className="h-5 w-5 desk:h-6 desk:w-6 text-slate-300" />
         </button>
-        <span className="text-base font-black flex-shrink-0">Restaurante</span>
+        <span className="text-base desk:text-xl font-black flex-shrink-0">Restaurante</span>
         <div className="flex-1" />
         <button
           onClick={() => setShowAdmin(true)}
-          className="w-11 h-11 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all active:scale-[0.96]"
+          className="w-11 h-11 desk:w-14 desk:h-14 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all active:scale-[0.96]"
           title="Gestionar productos"
         >
-          <Settings className="h-4 w-4 text-slate-300" />
+          <Settings className="h-4 w-4 desk:h-5 desk:w-5 text-slate-300" />
         </button>
       </header>
 
       {/* Tab bar — mesas activas */}
-      <div className="bg-slate-800 flex items-center gap-1 px-3 h-12 overflow-x-auto flex-shrink-0 border-b border-slate-700">
+      <div className="bg-slate-800 flex items-center gap-1 desk:gap-2 px-3 desk:px-5 h-12 desk:h-16 overflow-x-auto flex-shrink-0 border-b border-slate-700">
         {rs.tabs.map(tab => {
           const isActive = tab.id === rs.activeId
           const itemCount = tab.items.reduce((n, i) => n + i.cantidad, 0)
@@ -255,14 +255,14 @@ export default function RestaurantePage() {
               <button
                 onClick={() => setRs(prev => ({ ...prev, activeId: tab.id }))}
                 className={cn(
-                  'h-8 px-4 rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.96]',
+                  'h-8 desk:h-11 px-4 desk:px-5 rounded-xl text-sm desk:text-base font-bold flex items-center gap-2 transition-all active:scale-[0.96]',
                   isActive ? 'bg-white text-slate-900' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                 )}
               >
                 {tab.mesa ? `Mesa ${tab.mesa}` : 'Mesa'}
                 {itemCount > 0 && (
                   <span className={cn(
-                    'h-5 min-w-5 px-1 rounded-full text-xs font-black flex items-center justify-center',
+                    'h-5 desk:h-6 min-w-5 px-1 rounded-full text-xs desk:text-sm font-black flex items-center justify-center',
                     isActive ? 'bg-slate-900 text-white' : 'bg-amber-500 text-white'
                   )}>
                     {itemCount}
@@ -272,7 +272,7 @@ export default function RestaurantePage() {
               {rs.tabs.length > 1 && itemCount === 0 && (
                 <button
                   onClick={() => closeTab(tab.id)}
-                  className="w-5 h-5 rounded-full bg-slate-600 hover:bg-red-500 text-slate-300 hover:text-white text-xs flex items-center justify-center transition-all"
+                  className="w-5 h-5 desk:w-6 desk:h-6 rounded-full bg-slate-600 hover:bg-red-500 text-slate-300 hover:text-white text-xs flex items-center justify-center transition-all"
                 >×</button>
               )}
             </div>
@@ -280,10 +280,10 @@ export default function RestaurantePage() {
         })}
         <button
           onClick={addTab}
-          className="w-8 h-8 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0 ml-1"
+          className="w-8 h-8 desk:w-11 desk:h-11 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0 ml-1"
           title="Nueva mesa"
         >
-          <Plus className="h-4 w-4 text-slate-300" />
+          <Plus className="h-4 w-4 desk:h-5 desk:w-5 text-slate-300" />
         </button>
       </div>
 

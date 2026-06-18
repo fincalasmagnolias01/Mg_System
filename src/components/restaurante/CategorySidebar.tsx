@@ -21,7 +21,7 @@ function getCatIcon(nombre: string): LucideIcon {
   if (n.includes('postre') || n.includes('dulce') || n.includes('pastel') || n.includes('cake')) return Cookie
   if (n.includes('helado') || n.includes('nieve')) return IceCream
   if (n.includes('sopa') || n.includes('caldo') || n.includes('crema')) return Soup
-  if (n.includes('sandwich') || n.includes('sandwich') || n.includes('wrap') || n.includes('torta')) return Sandwich
+  if (n.includes('sandwich') || n.includes('wrap') || n.includes('torta')) return Sandwich
   if (n.includes('pizza')) return Pizza
   if (n.includes('carne') || n.includes('beef') || n.includes('churrasco') || n.includes('costilla')) return Beef
   if (n.includes('combo') || n.includes('paquete') || n.includes('promo') || n.includes('especial')) return Package
@@ -39,11 +39,11 @@ interface CategorySidebarProps {
 
 export default function CategorySidebar({ categorias, selected, onSelect }: CategorySidebarProps) {
   return (
-    <aside className="w-40 bg-slate-900 flex flex-col h-full flex-shrink-0 overflow-hidden">
-      <div className="px-3 py-2.5 border-b border-slate-800">
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Menú</p>
+    <aside className="w-40 desk:w-64 bg-slate-900 flex flex-col h-full flex-shrink-0 overflow-hidden">
+      <div className="px-3 desk:px-4 py-2.5 desk:py-4 border-b border-slate-800">
+        <p className="text-xs desk:text-sm font-bold text-slate-500 uppercase tracking-widest text-center">Menú</p>
       </div>
-      <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+      <div className="flex-1 overflow-y-auto p-2 desk:p-3 space-y-0.5 desk:space-y-1">
         {categorias.map(cat => {
           const Icon = getCatIcon(cat.nombre)
           const isSelected = selected === cat.id
@@ -52,14 +52,14 @@ export default function CategorySidebar({ categorias, selected, onSelect }: Cate
               key={cat.id}
               onClick={() => onSelect(cat.id)}
               className={cn(
-                'w-full rounded-xl px-2.5 py-2.5 flex flex-col items-center gap-1.5 transition-all active:scale-[0.97]',
+                'w-full rounded-xl px-2.5 desk:px-3 py-2.5 desk:py-4 flex flex-col items-center gap-1.5 desk:gap-3 transition-all active:scale-[0.97]',
                 isSelected
                   ? 'bg-white/15 text-white'
                   : 'text-slate-500 hover:bg-white/8 hover:text-slate-300'
               )}
             >
-              <Icon className="h-5 w-5 flex-shrink-0" strokeWidth={isSelected ? 2 : 1.5} />
-              <span className="text-[10px] font-semibold leading-tight text-center line-clamp-2">
+              <Icon className="h-5 w-5 desk:h-8 desk:w-8 flex-shrink-0" strokeWidth={isSelected ? 2 : 1.5} />
+              <span className="text-[10px] desk:text-sm font-semibold leading-tight text-center line-clamp-2">
                 {cat.nombre}
               </span>
             </button>
