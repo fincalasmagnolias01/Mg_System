@@ -225,78 +225,96 @@ export default function RestaurantePage() {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <header className="bg-slate-900 text-white px-4 desk:px-6 h-14 desk:h-[72px] flex items-center gap-3 desk:gap-4 flex-shrink-0">
+    <div className="h-screen flex flex-col overflow-hidden bg-slate-950">
+
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <header className="bg-slate-900 border-b border-slate-800 px-4 desk:px-6 h-14 desk:h-[68px] flex items-center gap-3 desk:gap-4 flex-shrink-0">
         <button
           onClick={() => router.push('/')}
-          className="w-11 h-11 desk:w-14 desk:h-14 rounded-xl hover:bg-slate-700 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0"
+          className="w-10 h-10 desk:w-12 desk:h-12 rounded-xl hover:bg-slate-800 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0"
         >
-          <House className="h-5 w-5 desk:h-6 desk:w-6 text-slate-300" />
+          <House className="h-5 w-5 desk:h-5 desk:w-5 text-slate-400" />
         </button>
-        <span className="text-base desk:text-xl font-black flex-shrink-0">Restaurante</span>
-        <div className="flex-1" />
+
+        {/* Brand */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 desk:w-9 desk:h-9 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+            <span className="text-slate-900 font-black text-sm desk:text-base">R</span>
+          </div>
+          <div>
+            <p className="text-sm desk:text-base font-black text-white leading-none">Restaurante</p>
+            <p className="text-[10px] desk:text-xs text-slate-500 leading-none mt-0.5">Sistema POS</p>
+          </div>
+        </div>
+
+        {/* Mesa tabs */}
+        <div className="flex-1 flex items-center gap-1.5 desk:gap-2 overflow-x-auto scrollbar-none mx-3 desk:mx-6">
+          {rs.tabs.map(tab => {
+            const isActive  = tab.id === rs.activeId
+            const itemCount = tab.items.reduce((n, i) => n + i.cantidad, 0)
+            return (
+              <div key={tab.id} className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  onClick={() => setRs(prev => ({ ...prev, activeId: tab.id }))}
+                  className={cn(
+                    'h-8 desk:h-10 px-3 desk:px-4 rounded-xl text-xs desk:text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.96] border',
+                    isActive
+                      ? 'bg-amber-500 text-slate-900 border-amber-500 shadow-md shadow-amber-500/20'
+                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-slate-200'
+                  )}
+                >
+                  {tab.mesa ? `Mesa ${tab.mesa}` : 'Nueva mesa'}
+                  {itemCount > 0 && (
+                    <span className={cn(
+                      'h-4.5 min-w-[18px] px-1 rounded-full text-[10px] desk:text-xs font-black flex items-center justify-center',
+                      isActive ? 'bg-slate-900/40 text-slate-900' : 'bg-amber-500 text-white'
+                    )}>
+                      {itemCount}
+                    </span>
+                  )}
+                </button>
+                {rs.tabs.length > 1 && itemCount === 0 && (
+                  <button
+                    onClick={() => closeTab(tab.id)}
+                    className="w-5 h-5 rounded-full bg-slate-700 hover:bg-red-500/80 text-slate-500 hover:text-white text-xs flex items-center justify-center transition-all"
+                  >×</button>
+                )}
+              </div>
+            )
+          })}
+          <button
+            onClick={addTab}
+            className="w-8 h-8 desk:w-10 desk:h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 border-dashed flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0"
+            title="Nueva mesa"
+          >
+            <Plus className="h-4 w-4 desk:h-4 desk:w-4 text-slate-500" />
+          </button>
+        </div>
+
+        {/* Admin */}
         <button
           onClick={() => setShowAdmin(true)}
-          className="w-11 h-11 desk:w-14 desk:h-14 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all active:scale-[0.96]"
+          className="w-10 h-10 desk:w-12 desk:h-12 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0"
           title="Gestionar productos"
         >
-          <Settings className="h-4 w-4 desk:h-5 desk:w-5 text-slate-300" />
+          <Settings className="h-4 w-4 desk:h-5 desk:w-5 text-slate-400" />
         </button>
       </header>
 
-      {/* Tab bar — mesas activas */}
-      <div className="bg-slate-800 flex items-center gap-1 desk:gap-2 px-3 desk:px-5 h-12 desk:h-16 overflow-x-auto flex-shrink-0 border-b border-slate-700">
-        {rs.tabs.map(tab => {
-          const isActive = tab.id === rs.activeId
-          const itemCount = tab.items.reduce((n, i) => n + i.cantidad, 0)
-          return (
-            <div key={tab.id} className="flex items-center gap-1 flex-shrink-0">
-              <button
-                onClick={() => setRs(prev => ({ ...prev, activeId: tab.id }))}
-                className={cn(
-                  'h-8 desk:h-11 px-4 desk:px-5 rounded-xl text-sm desk:text-base font-bold flex items-center gap-2 transition-all active:scale-[0.96]',
-                  isActive ? 'bg-white text-slate-900' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                )}
-              >
-                {tab.mesa ? `Mesa ${tab.mesa}` : 'Mesa'}
-                {itemCount > 0 && (
-                  <span className={cn(
-                    'h-5 desk:h-6 min-w-5 px-1 rounded-full text-xs desk:text-sm font-black flex items-center justify-center',
-                    isActive ? 'bg-slate-900 text-white' : 'bg-amber-500 text-white'
-                  )}>
-                    {itemCount}
-                  </span>
-                )}
-              </button>
-              {rs.tabs.length > 1 && itemCount === 0 && (
-                <button
-                  onClick={() => closeTab(tab.id)}
-                  className="w-5 h-5 desk:w-6 desk:h-6 rounded-full bg-slate-600 hover:bg-red-500 text-slate-300 hover:text-white text-xs flex items-center justify-center transition-all"
-                >×</button>
-              )}
-            </div>
-          )
-        })}
-        <button
-          onClick={addTab}
-          className="w-8 h-8 desk:w-11 desk:h-11 rounded-xl bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all active:scale-[0.96] flex-shrink-0 ml-1"
-          title="Nueva mesa"
-        >
-          <Plus className="h-4 w-4 desk:h-5 desk:w-5 text-slate-300" />
-        </button>
-      </div>
-
-      {/* POS 3-column layout */}
+      {/* ── Main POS area ───────────────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
-        <CategorySidebar
-          categorias={categorias}
-          selected={catSelected}
-          onSelect={id => setCatSelected(id)}
-        />
-        <main className="flex-1 overflow-hidden">
+
+        {/* Product column: categories + grid */}
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <CategorySidebar
+            categorias={categorias}
+            selected={catSelected}
+            onSelect={id => setCatSelected(id)}
+          />
           <ProductGrid productos={productos} onSelect={handleSelectProduct} />
         </main>
+
+        {/* Order panel */}
         <CurrentOrder
           items={activeTab.items}
           mesa={activeTab.mesa}

@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { ItemOrden } from '@/types'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
 import { formatCurrency, cn } from '@/lib/utils'
-import { Trash2, Plus, Minus, ShoppingCart, Percent, Star, MessageSquare, Check } from 'lucide-react'
+import {
+  Trash2, Plus, Minus, ShoppingCart, Percent,
+  Star, MessageSquare, Check, CreditCard, Loader2,
+} from 'lucide-react'
 
 interface CurrentOrderProps {
   items: ItemOrden[]
@@ -27,45 +29,60 @@ interface CurrentOrderProps {
 export default function CurrentOrder({
   items, mesa, descuento, propina,
   onMesaChange, onQtyChange, onNotaChange, onRemove,
-  onDescuento, onPropina, onPagar, onCerrar, loading
+  onDescuento, onPropina, onPagar, onCerrar, loading,
 }: CurrentOrderProps) {
-  const subtotal = items.reduce((s, i) => s + i.subtotal, 0)
-  const total = subtotal - descuento + propina
+  const subtotal   = items.reduce((s, i) => s + i.subtotal, 0)
+  const total      = subtotal - descuento + propina
+  const totalItems = items.reduce((n, i) => n + i.cantidad, 0)
 
   return (
-    <aside className="w-80 desk:w-[480px] bg-white border-l flex flex-col h-full flex-shrink-0">
-      {/* Header */}
-      <div className="p-3 desk:p-5 border-b bg-slate-50 flex-shrink-0">
-        <div className="flex items-center gap-2 desk:gap-3">
-          <ShoppingCart className="h-4 w-4 desk:h-5 desk:w-5 text-slate-500 flex-shrink-0" />
-          <span className="text-sm desk:text-base font-black text-slate-700 flex-shrink-0">Mesa</span>
-          <Input
-            value={mesa}
-            onChange={e => onMesaChange(e.target.value)}
-            placeholder="# mesa"
-            className="h-8 desk:h-11 rounded-lg text-sm desk:text-base font-bold text-center border-slate-200 bg-white flex-1"
-          />
-          {items.length > 0 && (
-            <span className="text-xs desk:text-sm font-bold bg-slate-900 text-white px-2 py-1 rounded-lg flex-shrink-0">
-              {items.reduce((n, i) => n + i.cantidad, 0)} items
-            </span>
-          )}
+    <aside className="w-80 desk:w-[460px] bg-slate-900 border-l border-slate-800 flex flex-col h-full flex-shrink-0">
+
+      {/* ── Header ────────────────────────────────────── */}
+      <div className="px-4 desk:px-6 pt-4 desk:pt-5 pb-3 desk:pb-4 flex-shrink-0 border-b border-slate-800">
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <label className="text-[10px] desk:text-xs font-bold text-slate-600 uppercase tracking-widest mb-1 block">Mesa / Mesa</label>
+            <Input
+              value={mesa}
+              onChange={e => onMesaChange(e.target.value)}
+              placeholder="Número de mesa"
+              className="h-9 desk:h-11 bg-slate-800 border-slate-700 text-white placeholder:text-slate-600 text-sm desk:text-base font-bold focus:border-amber-500/50 rounded-xl"
+            />
+          </div>
+          <div className="text-right flex-shrink-0">
+            <p className="text-[10px] desk:text-xs font-bold text-slate-600 uppercase tracking-widest mb-1">Items</p>
+            <div className="h-9 desk:h-11 w-14 desk:w-16 bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center">
+              <span className={cn(
+                'text-lg desk:text-xl font-black',
+                totalItems > 0 ? 'text-amber-400' : 'text-slate-700'
+              )}>
+                {totalItems}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Items list */}
+      {/* ── Items list ────────────────────────────────── */}
       <ScrollArea className="flex-1">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 desk:h-64 text-slate-300">
-            <ShoppingCart className="h-12 w-12 desk:h-16 desk:w-16 mb-2" strokeWidth={1} />
-            <p className="text-sm desk:text-base">Orden vacía</p>
+          <div className="flex flex-col items-center justify-center gap-4 py-16 px-6 text-center">
+            <div className="w-16 h-16 desk:w-20 desk:h-20 rounded-2xl bg-slate-800 flex items-center justify-center">
+              <ShoppingCart className="h-8 w-8 desk:h-10 desk:w-10 text-slate-700" strokeWidth={1.5} />
+            </div>
+            <div>
+              <p className="text-sm desk:text-base font-semibold text-slate-600">Orden vacía</p>
+              <p className="text-xs desk:text-sm text-slate-700 mt-1">Toca un producto del menú</p>
+            </div>
           </div>
         ) : (
-          <div className="p-2 desk:p-3 space-y-1.5 desk:space-y-2">
-            {items.map(item => (
+          <div className="px-3 desk:px-4 py-3 desk:py-4 space-y-2 desk:space-y-2.5">
+            {items.map((item, idx) => (
               <ItemRow
                 key={item.tempId}
                 item={item}
+                index={idx + 1}
                 onQtyChange={onQtyChange}
                 onRemove={onRemove}
                 onNotaChange={onNotaChange}
@@ -75,41 +92,42 @@ export default function CurrentOrder({
         )}
       </ScrollArea>
 
-      <Separator />
-
-      {/* Totals */}
-      <div className="px-4 desk:px-6 py-3 desk:py-5 space-y-1.5 desk:space-y-2 flex-shrink-0">
-        <div className="flex justify-between text-sm desk:text-base text-slate-600">
+      {/* ── Totals ────────────────────────────────────── */}
+      <div className="border-t border-slate-800 px-4 desk:px-6 py-4 desk:py-5 space-y-2 desk:space-y-3 flex-shrink-0">
+        <div className="flex justify-between items-center text-sm desk:text-base text-slate-400">
           <span>Subtotal</span>
-          <span>{formatCurrency(subtotal)}</span>
+          <span className="font-semibold text-slate-300">{formatCurrency(subtotal)}</span>
         </div>
         {descuento > 0 && (
-          <div className="flex justify-between text-sm desk:text-base text-emerald-600 font-medium">
-            <span>Descuento</span>
-            <span>− {formatCurrency(descuento)}</span>
+          <div className="flex justify-between items-center text-sm desk:text-base text-emerald-400">
+            <span>Descuento aplicado</span>
+            <span className="font-bold">− {formatCurrency(descuento)}</span>
           </div>
         )}
         {propina > 0 && (
-          <div className="flex justify-between text-sm desk:text-base text-slate-600">
+          <div className="flex justify-between items-center text-sm desk:text-base text-amber-400">
             <span>Propina (10%)</span>
-            <span>{formatCurrency(propina)}</span>
+            <span className="font-bold">+ {formatCurrency(propina)}</span>
           </div>
         )}
-        <div className="flex justify-between font-black text-xl desk:text-3xl text-slate-900 pt-1">
-          <span>TOTAL</span>
-          <span>{formatCurrency(total)}</span>
+        <div className="flex justify-between items-center pt-2 border-t border-slate-800">
+          <span className="text-base desk:text-lg font-bold text-slate-300">TOTAL</span>
+          <span className="text-2xl desk:text-4xl font-black text-white">{formatCurrency(total)}</span>
         </div>
       </div>
 
-      <Separator />
-
-      {/* Action buttons */}
-      <div className="p-3 desk:p-5 space-y-2 desk:space-y-3 flex-shrink-0">
+      {/* ── Actions ───────────────────────────────────── */}
+      <div className="px-4 desk:px-6 pb-4 desk:pb-6 pt-2 space-y-2 desk:space-y-3 flex-shrink-0">
+        {/* Descuento + Propina */}
         <div className="grid grid-cols-2 gap-2 desk:gap-3">
           <button
             onClick={onDescuento}
             disabled={items.length === 0}
-            className="h-12 desk:h-16 rounded-xl border-2 border-slate-200 flex items-center justify-center gap-1.5 text-sm desk:text-base font-semibold text-slate-600 hover:bg-slate-50 active:scale-[0.97] transition-all disabled:opacity-30"
+            className={cn(
+              'h-11 desk:h-13 rounded-xl flex items-center justify-center gap-2 text-sm desk:text-base font-semibold transition-all active:scale-[0.97] disabled:opacity-25',
+              'bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white'
+            )}
+            style={{ height: undefined }}
           >
             <Percent className="h-4 w-4 desk:h-5 desk:w-5" />
             Descuento
@@ -118,47 +136,64 @@ export default function CurrentOrder({
             onClick={onPropina}
             disabled={items.length === 0}
             className={cn(
-              'h-12 desk:h-16 rounded-xl border-2 flex items-center justify-center gap-1.5 text-sm desk:text-base font-semibold transition-all active:scale-[0.97] disabled:opacity-30',
+              'h-11 rounded-xl flex items-center justify-center gap-2 text-sm desk:text-base font-semibold transition-all active:scale-[0.97] disabled:opacity-25',
               propina > 0
-                ? 'border-amber-400 bg-amber-50 text-amber-700'
-                : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                ? 'bg-amber-500/15 border border-amber-500/40 text-amber-400'
+                : 'bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white'
             )}
           >
-            <Star className="h-4 w-4 desk:h-5 desk:w-5" />
+            <Star className={cn('h-4 w-4 desk:h-5 desk:w-5', propina > 0 && 'fill-amber-400')} />
             Propina
           </button>
         </div>
 
+        {/* Cobrar — main CTA */}
         <button
           onClick={onPagar}
           disabled={items.length === 0 || loading}
-          className="w-full h-14 desk:h-20 rounded-xl text-base desk:text-2xl font-black bg-slate-900 hover:bg-slate-800 text-white active:scale-[0.98] transition-all disabled:opacity-30"
+          className={cn(
+            'w-full h-16 desk:h-20 rounded-2xl font-black text-lg desk:text-2xl',
+            'transition-all active:scale-[0.98] disabled:opacity-25',
+            'bg-gradient-to-br from-emerald-500 to-emerald-600',
+            'hover:from-emerald-400 hover:to-emerald-500',
+            'text-white shadow-xl shadow-emerald-500/25',
+            'flex items-center justify-center gap-3'
+          )}
         >
-          Cobrar · {formatCurrency(total)}
+          {loading ? (
+            <Loader2 className="h-6 w-6 animate-spin" />
+          ) : (
+            <>
+              <CreditCard className="h-6 w-6 desk:h-7 desk:w-7" />
+              <span>Cobrar {formatCurrency(total)}</span>
+            </>
+          )}
         </button>
 
+        {/* Cancel */}
         <button
           onClick={onCerrar}
           disabled={items.length === 0}
-          className="w-full h-10 desk:h-12 rounded-xl text-xs desk:text-sm text-slate-400 hover:text-slate-600 hover:bg-slate-50 active:scale-[0.97] transition-all disabled:opacity-30"
+          className="w-full h-9 desk:h-11 rounded-xl text-xs desk:text-sm text-slate-600 hover:text-slate-400 hover:bg-slate-800 active:scale-[0.97] transition-all disabled:opacity-0"
         >
-          Cancelar / Nueva Orden
+          Cancelar orden
         </button>
       </div>
     </aside>
   )
 }
 
-/* ── Item row with nota editing ──────────────────────────── */
+/* ── Item row ────────────────────────────────────────────── */
 
-function ItemRow({ item, onQtyChange, onRemove, onNotaChange }: {
+function ItemRow({ item, index, onQtyChange, onRemove, onNotaChange }: {
   item: ItemOrden
+  index: number
   onQtyChange: (tempId: string, qty: number) => void
   onRemove: (tempId: string) => void
   onNotaChange: (tempId: string, nota: string) => void
 }) {
   const [editingNota, setEditingNota] = useState(false)
-  const [notaDraft, setNotaDraft] = useState(item.notas ?? '')
+  const [notaDraft,   setNotaDraft]   = useState(item.notas ?? '')
 
   function commitNota() {
     onNotaChange(item.tempId, notaDraft.trim())
@@ -166,72 +201,89 @@ function ItemRow({ item, onQtyChange, onRemove, onNotaChange }: {
   }
 
   return (
-    <div className="bg-slate-50 rounded-xl p-2.5 desk:p-4 space-y-2">
-      <div className="flex items-start gap-2 desk:gap-3">
-        {/* Qty controls */}
-        <div className="flex items-center gap-1 desk:gap-1.5 flex-shrink-0">
-          <button
-            onClick={() => onQtyChange(item.tempId, item.cantidad - 1)}
-            className="w-10 h-10 desk:w-12 desk:h-12 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-600 active:scale-[0.93] transition-all"
-          >
-            <Minus className="h-3.5 w-3.5 desk:h-4 desk:w-4" />
-          </button>
-          <span className="w-8 desk:w-10 text-center font-black text-base desk:text-xl">{item.cantidad}</span>
-          <button
-            onClick={() => onQtyChange(item.tempId, item.cantidad + 1)}
-            className="w-10 h-10 desk:w-12 desk:h-12 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-600 active:scale-[0.93] transition-all"
-          >
-            <Plus className="h-3.5 w-3.5 desk:h-4 desk:w-4" />
-          </button>
+    <div className="rounded-xl bg-slate-800/60 border border-slate-700/40 overflow-hidden">
+      <div className="flex items-center gap-2.5 desk:gap-3 p-2.5 desk:p-3.5">
+
+        {/* Index */}
+        <span className="w-5 h-5 rounded-full bg-slate-700 text-[10px] font-black text-slate-500 flex items-center justify-center flex-shrink-0">
+          {index}
+        </span>
+
+        {/* Name & unit price */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm desk:text-base font-semibold text-slate-100 truncate leading-tight">{item.nombre_producto}</p>
+          {item.variante && Object.keys(item.variante).length > 0 && (
+            <p className="text-[10px] desk:text-xs text-slate-500 truncate">
+              {Object.values(item.variante).join(' · ')}
+            </p>
+          )}
+          <p className="text-xs desk:text-sm text-slate-500 mt-0.5">{formatCurrency(item.precio_unitario)} c/u</p>
         </div>
 
-        {/* Name & price */}
-        <div className="flex-1 min-w-0 pt-1">
-          <p className="text-sm desk:text-base font-semibold text-slate-800 leading-tight truncate">{item.nombre_producto}</p>
-          <p className="text-xs desk:text-sm text-slate-400">{formatCurrency(item.precio_unitario)} c/u</p>
-        </div>
+        {/* Subtotal */}
+        <span className="text-sm desk:text-base font-black text-amber-400 flex-shrink-0">{formatCurrency(item.subtotal)}</span>
 
-        {/* Subtotal & delete */}
-        <div className="flex flex-col items-end gap-1 flex-shrink-0 pt-1">
-          <span className="text-sm desk:text-base font-black text-slate-900">{formatCurrency(item.subtotal)}</span>
-          <button
-            onClick={() => onRemove(item.tempId)}
-            className="w-7 h-7 desk:w-9 desk:h-9 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 active:scale-[0.93] transition-all"
-          >
-            <Trash2 className="h-3.5 w-3.5 desk:h-4 desk:w-4" />
-          </button>
-        </div>
+        {/* Delete */}
+        <button
+          onClick={() => onRemove(item.tempId)}
+          className="w-7 h-7 desk:w-8 desk:h-8 rounded-lg flex items-center justify-center text-slate-700 hover:text-red-400 hover:bg-red-500/10 active:scale-[0.92] transition-all flex-shrink-0"
+        >
+          <Trash2 className="h-3.5 w-3.5 desk:h-4 desk:w-4" />
+        </button>
       </div>
 
-      {/* Nota inline */}
-      {editingNota ? (
-        <div className="flex items-center gap-1.5">
-          <Input
-            value={notaDraft}
-            onChange={e => setNotaDraft(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') commitNota() }}
-            placeholder="ej: sin cebolla, bien cocido..."
-            className="h-8 desk:h-10 text-xs desk:text-sm rounded-lg flex-1"
-            autoFocus
-          />
+      {/* Qty + nota row */}
+      <div className="flex items-center gap-2 px-2.5 desk:px-3.5 pb-2.5 desk:pb-3">
+        {/* Qty controls */}
+        <div className="flex items-center gap-1.5 bg-slate-900/60 rounded-xl p-1">
           <button
-            onClick={commitNota}
-            className="w-8 h-8 desk:w-10 desk:h-10 rounded-lg bg-slate-900 text-white flex items-center justify-center flex-shrink-0 active:scale-[0.93] transition-all"
+            onClick={() => onQtyChange(item.tempId, item.cantidad - 1)}
+            className="w-8 h-8 desk:w-10 desk:h-10 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center active:scale-[0.92] transition-all"
           >
-            <Check className="h-3.5 w-3.5 desk:h-4 desk:w-4" />
+            <Minus className="h-3 w-3 desk:h-3.5 desk:w-3.5 text-slate-300" />
+          </button>
+          <span className="w-7 desk:w-9 text-center font-black text-base desk:text-lg text-white">{item.cantidad}</span>
+          <button
+            onClick={() => onQtyChange(item.tempId, item.cantidad + 1)}
+            className="w-8 h-8 desk:w-10 desk:h-10 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center active:scale-[0.92] transition-all"
+          >
+            <Plus className="h-3 w-3 desk:h-3.5 desk:w-3.5 text-slate-300" />
           </button>
         </div>
-      ) : (
-        <button
-          onClick={() => { setNotaDraft(item.notas ?? ''); setEditingNota(true) }}
-          className="flex items-center gap-1.5 text-xs desk:text-sm text-slate-400 hover:text-slate-600 transition-colors w-full text-left"
-        >
-          <MessageSquare className="h-3 w-3 desk:h-4 desk:w-4 flex-shrink-0" />
-          <span className={item.notas ? 'text-slate-600 font-medium italic' : ''}>
-            {item.notas || 'Agregar nota...'}
-          </span>
-        </button>
-      )}
+
+        {/* Nota */}
+        <div className="flex-1 min-w-0">
+          {editingNota ? (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={notaDraft}
+                onChange={e => setNotaDraft(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') commitNota() }}
+                placeholder="ej: sin cebolla..."
+                autoFocus
+                className="flex-1 h-8 desk:h-9 bg-slate-700 border border-slate-600 rounded-lg px-2.5 text-xs desk:text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-amber-500/50 min-w-0"
+              />
+              <button
+                onClick={commitNota}
+                className="w-8 h-8 desk:w-9 desk:h-9 rounded-lg bg-emerald-600 hover:bg-emerald-500 flex items-center justify-center flex-shrink-0 active:scale-[0.92] transition-all"
+              >
+                <Check className="h-3.5 w-3.5 text-white" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setNotaDraft(item.notas ?? ''); setEditingNota(true) }}
+              className="flex items-center gap-1.5 text-xs desk:text-sm text-slate-600 hover:text-slate-400 transition-colors w-full text-left truncate"
+            >
+              <MessageSquare className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className={cn('truncate', item.notas && 'text-amber-500/80 italic')}>
+                {item.notas || 'Nota...'}
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
